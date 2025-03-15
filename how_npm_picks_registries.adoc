@@ -1,4 +1,4 @@
-= How npm selects registries
+= How npm picks registries
 
 == Question
 
