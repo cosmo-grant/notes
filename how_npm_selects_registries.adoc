@@ -29,7 +29,7 @@ and you run `npm install @foo/bar`, then which registry will npm select?
 .. the first same-scoped registry if there is one
 .. else the first unscoped registry
 
-Thus: just `user-registry`.
+So: just `user-registry`.
 
 == Remarks
 
@@ -62,19 +62,19 @@ One approach is to set
 registry=https://private-registry.com
 .....
 
-in your project config.
+in Your Team's project config.
 
-This mostly works fine:
-. It doesn't affect things when working in Other Team.
-. When working in Your Team, npm looks for scoped and unscoped packages in `private-registry`.
+This mostly works fine: it doesn't affect Other Team, and in Your Team's project npm looks for scoped and unscoped packages in `private-registry`.
 
-Except 
-if someone publishes a package `@myorg/cowsay` to `private-registry`
-and you need it in Your Team's project
-but Other Team insists on `@myorg:registry=https://other-registry.com` in the user config, 
+Except if
+
+. someone publishes a package `@myorg/cowsay` to `private-registry`
+. and you need it in Your Team's project
+. but Other Team insists on `@myorg:registry=https://other-registry.com` in the user config, 
+
 then when you run `npm install @myorg/cowsay` in Your Team's project, npm will quietly fetch the wrong package: the one from `other-registry`, not `private-registry`.
 
-Was there a failsafe approach?
+Is there a failsafe approach?
 
 == Evidence
 
@@ -91,34 +91,31 @@ registry=https://project-registry.com
 @foo:registry=https://user-registry.com
 % npm install @foo/bar
 npm error network request to https://user-registry.com/@foo%2fbar failed
-# the point is that it looked up user-registry
-# don't forget to clean up!
+# the point is that it looked up user-registry!
+# don't forget to clean up
+% cd .. && rm -rf test_npm_registry_lookup && npm config delete '@foo:registry'
 .....
-
-
 
 === Docs
 
 From https://docs.npmjs.com/cli/v11/configuring-npm/npmrc:
 
-. npm gets its config settings from the command line, environment variables, and `npmrc` files.
-. The four relevant files are:
+* npm gets its config settings from the command line, environment variables, and `npmrc` files.
+* The four relevant files are:
 ** per-project config file (`/path/to/my/project/.npmrc`)
 ** per-user config file (`~/.npmrc`)
 ** global config file (`$PREFIX/etc/npmrc`)
 ** npm builtin config file (`/path/to/npm/npmrc`)
-. Each of these files is loaded, and config options are resolved in priority order.
+* Each of these files is loaded, and config options are resolved in priority order.
 
 From https://docs.npmjs.com/cli/v11/using-npm/scope:
 
-. Scopes can be associated with a separate registry.
-. You can also associate a scope with a registry using `npm config`:
+* Scopes can be associated with a separate registry.
+* You can also associate a scope with a registry using `npm config`:
 
 .....
 npm config set @myco:registry=http://reg.example.com
 .....
 
-. Once a scope is associated with a registry, any npm install for a package with that scope will request packages from that registry instead.
-
-
+* Once a scope is associated with a registry, any npm install for a package with that scope will request packages from that registry instead.
 
