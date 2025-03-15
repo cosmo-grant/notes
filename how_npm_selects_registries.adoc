@@ -1,0 +1,124 @@
+= How npm selects registries
+
+== Question
+
+If your project config sets
+
+.....
+registry=https://project-registry.com
+.....
+
+and your user config sets
+
+.....
+@foo:registry=https://user-registry.com
+.....
+
+and you run `npm install @foo/bar`, then which registry will npm select?
+
+. just `project-registry`?
+. just `user-registry`?
+. first `project-registry` and if the package isn't found then `user-registry`?
+. something else?
+
+== Answer
+
+. npm gets its config from the command line, environment variables, and four config files — project, user, global and builtin — in order.
+. for an unscoped package, npm selects the first unscoped registry
+. for a scoped package, npm selects
+.. the first same-scoped registry if there is one
+.. else the first unscoped registry
+
+Thus: just `user-registry`.
+
+== Remarks
+
+The registry npm selects is a function of your config and the package name.
+
+The scope is part of the package name.
+For example, above, npm will search for `@foo/bar` in `user-registry`.
+So the scope affects which registry is searched _and_ what is searched for.
+
+The `aws codeartifact login --tool npm` command, suggested in the "View connection instructions" popup in CodeArtifact, modifies the user config file.
+Beware!
+
+== Gotcha
+
+Suppose
+
+. Your Team has to fetch packages from `private-registry`
+. but you also sometimes work in Other Team, which insists on configuring `npm` for its projects via user config,
+. and packages may be published to `private-registry` with any scope, or no scope.
+
+How should you configure npm in Your Team?
+
+Insist that packages published to `private-registry` have one of a fixed set of scopes?
+Insist that Other Team uses project, not user, config?
+Good luck.
+
+One approach is to set
+
+.....
+registry=https://private-registry.com
+.....
+
+in your project config.
+
+This mostly works fine:
+. It doesn't affect things when working in Other Team.
+. When working in Your Team, npm looks for scoped and unscoped packages in `private-registry`.
+
+Except 
+if someone publishes a package `@myorg/cowsay` to `private-registry`
+and you need it in Your Team's project
+but Other Team insists on `@myorg:registry=https://other-registry.com` in the user config, 
+then when you run `npm install @myorg/cowsay` in Your Team's project, npm will quietly fetch the wrong package: the one from `other-registry`, not `private-registry`.
+
+Was there a failsafe approach?
+
+== Evidence
+
+=== Experiment
+
+.....
+% mkdir test_npm_registry_lookup && cd test_npm_registry_lookup
+% npm init -y
+% npm config set 'registry=https://project-registry.com' --location=project
+% npm config set '@foo:registry=https://user-registry.com'
+% cat .npmrc
+registry=https://project-registry.com
+% cat ~/.npmrc
+@foo:registry=https://user-registry.com
+% npm install @foo/bar
+npm error network request to https://user-registry.com/@foo%2fbar failed
+# the point is that it looked up user-registry
+# don't forget to clean up!
+.....
+
+
+
+=== Docs
+
+From https://docs.npmjs.com/cli/v11/configuring-npm/npmrc:
+
+. npm gets its config settings from the command line, environment variables, and `npmrc` files.
+. The four relevant files are:
+** per-project config file (`/path/to/my/project/.npmrc`)
+** per-user config file (`~/.npmrc`)
+** global config file (`$PREFIX/etc/npmrc`)
+** npm builtin config file (`/path/to/npm/npmrc`)
+. Each of these files is loaded, and config options are resolved in priority order.
+
+From https://docs.npmjs.com/cli/v11/using-npm/scope:
+
+. Scopes can be associated with a separate registry.
+. You can also associate a scope with a registry using `npm config`:
+
+.....
+npm config set @myco:registry=http://reg.example.com
+.....
+
+. Once a scope is associated with a registry, any npm install for a package with that scope will request packages from that registry instead.
+
+
+

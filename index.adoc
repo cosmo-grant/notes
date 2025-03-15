@@ -1,3 +1,4 @@
 == Notes
 
 * https://cosmo-grant.github.io/notes/test.html[test]
+* https://cosmo-grant.github.io/notes/how_npm_selects_registries.html[how npm selects registries]
