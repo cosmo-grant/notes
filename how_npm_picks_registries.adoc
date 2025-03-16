@@ -30,6 +30,7 @@ then which registry will npm search?
 == Answer
 
 . npm gets its config from the command line, environment variables, and four config files — project, user, global and builtin — in order.
+  The first found value for a given key, e.g. "registry", wins.
 . for an unscoped package, npm picks the first unscoped registry
 . for a scoped package, npm picks
 .. the first same-scoped registry if it exists
