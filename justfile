@@ -7,6 +7,12 @@ html ADOC_FILENAME:
 publish:
   asciidoctor -D public/ *.adoc
 
+preview ADOC_FILENAME: (html ADOC_FILENAME)
+  #!/usr/bin/env sh
+  HTML_FILENAME="$(basename {{ADOC_FILENAME}} .adoc).html"
+  open ./html/$HTML_FILENAME
+
+
 refresh-index:
   #!/usr/bin/env sh
   BASE_URL="https://cosmo-grant.github.io/notes"
