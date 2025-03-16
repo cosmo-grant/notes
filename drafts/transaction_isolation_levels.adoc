@@ -1,19 +1,100 @@
 = Transaction isolation levels
 
-== Bad things
-
-When two queries run concurrently against a database, bad things may happen.
+When two transactions - groups of statements - run concurrently against a database, bad things may happen.
 
 Like what?
 
+== Bad things
+
 === Dirty read
+
+Supposing the transactions are
+
+[source,sql]
+insert into emails (body, unread_flag) values ('hi', true);
+update count set count = count + 1;
+
+and
+
+[source,sql]
+select * from emails;
+select unread from count; --- denormalized for speed
+
+then the statements might run in this order:
+
+[source,sql]
+insert into emails (body, unread_flag) values ('hi', true);
+select * from emails;
+select unread from count;
+update count set count = count + 1;
+
+In a picture:
+
+image::../images/transaction_isolation_levels-dirty_read_concrete.jpg[]
+
+This is bad: you see the unread email but the counter still says 0.
+
+Generically:
+
+image::../images/transaction_isolation_levels-dirty_read_generic.jpg[]
+
+This is known as a _dirty read_: one transaction sees another's uncommitted changes.
 
 === Dirty write
 
+image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+
+This is bad: bo buys it but jo gets it.
+
+Generically:
+
+image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+
 === Lost update
+
+image::../images/transaction_isolation_levels-lost_update_concrete.jpg[]
+
+This is bad: the application tried to increment `x` twice, but `x` ends up as 2, not 3.
+
+Generically:
+
+image::../images/transaction_isolation_levels-lost_update_generic.jpg[]
+
+This is a _lost update_.
+
 
 === Write skew
 
+image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+
+This is bad:
+one application confirms it's safe to take off the belt, then does so;
+another application confirms it's safe to take off the braces, then does so;
+and then your trousers fall down.
+
+Generically:
+
+image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+
+This is known as _write skew_: read-write straddles writes.
+
 === Read skew
 
-== How to read the diagrams
+image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+
+This is bad: your money has vanished.
+
+Generically:
+
+image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+
+This is known as _read skew_: reads straddle writes.
+
+unless stated otherwise, assume variables may take the same value
+unshown commits/begins may occur anywhere (after the last statement in that coloured transaction)
+the phenomena are not necessarily problematic, e.g. if the client didn't make a decision based on the read value
+
+
+== Summary
+
+table
