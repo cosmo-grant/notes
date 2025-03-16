@@ -1,0 +1,19 @@
+= Transaction isolation levels
+
+== Bad things
+
+When two queries run concurrently against a database, bad things may happen.
+
+Like what?
+
+=== Dirty read
+
+=== Dirty write
+
+=== Lost update
+
+=== Write skew
+
+=== Read skew
+
+== How to read the diagrams
