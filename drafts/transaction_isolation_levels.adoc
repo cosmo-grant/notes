@@ -1,6 +1,6 @@
-= Transaction isolation levels
+= Concurrent transactions
 
-When two transactions - groups of statements - run concurrently against a database, bad things may happen.
+When two transactions run concurrently against a database, bad things may happen.
 
 Like what?
 
@@ -8,17 +8,17 @@ Like what?
 
 === Dirty read
 
-Supposing the transactions are
+If the transactions are
 
 [source,sql]
 insert into emails (body, unread_flag) values ('hi', true);
-update count set count = count + 1;
+update count set unread = unread + 1; --- denormalized for speed
 
 and
 
 [source,sql]
 select * from emails;
-select unread from count; --- denormalized for speed
+select unread from count;
 
 then the statements might run in this order:
 
@@ -28,19 +28,21 @@ select * from emails;
 select unread from count;
 update count set count = count + 1;
 
-In a picture:
+This is bad: you see the unread email but the counter still says 0.
+
+A picture is clearer:
 
 image::../images/transaction_isolation_levels-dirty_read_concrete.jpg[]
-
-This is bad: you see the unread email but the counter still says 0.
 
 Generically:
 
 image::../images/transaction_isolation_levels-dirty_read_generic.jpg[]
 
-This is known as a _dirty read_: one transaction sees another's uncommitted changes.
+This is a _dirty read_: one transaction's read sees another transaction's uncommitted write.
 
 === Dirty write
+
+Another example:
 
 image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
@@ -50,39 +52,42 @@ Generically:
 
 image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
+This is a _dirty write_: one transaction's write clobbers another's uncommitted write.
+
 === Lost update
 
 image::../images/transaction_isolation_levels-lost_update_concrete.jpg[]
 
-This is bad: the application tried to increment `x` twice, but `x` ends up as 2, not 3.
+This is not a dirty write.
+But it's still bad.
+Two applications (represented by the orange and green text) tried to increment `x`, and succeeded so far as they can tell, but `x` ends up as 1, not 2.
 
 Generically:
 
 image::../images/transaction_isolation_levels-lost_update_generic.jpg[]
 
-This is a _lost update_.
-
+This is a _lost update_: two transactions read an object, applications compute new values for it, and the transactions write and commit in turn.
 
 === Write skew
 
 image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
 This is bad:
-one application confirms it's safe to take off the belt, then does so;
-another application confirms it's safe to take off the braces, then does so;
-and then your trousers fall down.
+the orange transaction confirms it's safe to take off your belt, and does so;
+the green transaction confirms it's safe to take off your braces, and does so;
+then your trousers fall down.
 
 Generically:
 
 image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
-This is known as _write skew_: read-write straddles writes.
+This is known as _write skew_: read-write straddles write.
 
 === Read skew
 
 image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
-This is bad: your money has vanished.
+This is bad: the orange transaction sees current's debit but not saving's credit.
 
 Generically:
 
@@ -90,11 +95,21 @@ image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
 This is known as _read skew_: reads straddle writes.
 
-unless stated otherwise, assume variables may take the same value
-unshown commits/begins may occur anywhere (after the last statement in that coloured transaction)
-the phenomena are not necessarily problematic, e.g. if the client didn't make a decision based on the read value
 
+== Comments
 
-== Summary
+=== The phenomena aren't necessarily bad
 
-table
+Take dirty reads.
+Some instances are bad, like the emails example.
+Other instances aren't.
+For example, if a transaction writes then commits, and another transaction consists of a single read, then it's fine if it reads the write before it's committed.
+
+But a database system can't, or can't easily, prevent just the bad instances.
+So it prevents them all.
+For example, the database system can't tell in advance whether an uncommitted write will be committed or aborted.
+
+=== Dirty write v. lost update v. write skew
+
+[quote,Martin Kleppmann,Designing Data-Intensive Applications]
+Write skew can occur if two transactions read the same objects, and then update some of those objects (different transactions may update different objects). In the special case where the transactions update the same object, you get a dirty write or lost update anomaly (depending on the timing).
