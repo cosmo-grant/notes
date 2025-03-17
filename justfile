@@ -1,11 +1,11 @@
 html-all:
-  asciidoctor -D html/ drafts/*.adoc publish/*.adoc
+  asciidoctor -D html/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai drafts/*.adoc publish/*.adoc
 
 html ADOC_FILENAME:
-  asciidoctor -D html/ "{{ADOC_FILENAME}}"
+  asciidoctor -D html/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai "{{ADOC_FILENAME}}"
 
 publish:
-  asciidoctor -D public/ publish/*.adoc
+  asciidoctor -D public/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai publish/*.adoc
 
 preview ADOC_FILENAME: (html ADOC_FILENAME)
   #!/usr/bin/env sh
