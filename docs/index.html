@@ -433,6 +433,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
@@ -444,10 +445,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p><a href="https://cosmo-grant.github.io/notes/test.html">test</a></p>
+<p><a href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html">how npm picks registries</a></p>
 </li>
 <li>
-<p><a href="https://cosmo-grant.github.io/notes/how_npm_selects_registries.html">how_npm_selects_registries</a></p>
+<p><a href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
 </li>
 </ul>
 </div>
@@ -456,8 +457,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-15 17:27:58 UTC
+Last updated 2025-04-27 00:31:12 +0100
 </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>
