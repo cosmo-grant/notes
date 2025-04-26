@@ -1,0 +1,97 @@
+= How backoff jitters and why
+:stem:
+
+== The default jitter
+
+To retry a function at intervals until a condition is met, a typical approach in Python is to apply a `backoff` decorator.
+
+For example:
+
+[source,python]
+----
+import backoff
+
+@backoff.on_exception(backoff.expo, Exception)
+def foo():
+    ...
+----
+
+When you call `foo()`, each time it throws an exception, `backoff` waits a bit then retries. The wait times are 1, 2, 4, 8, ... but _jittered_.
+
+Jittered how? I'd assumed by adding a random number drawn from some symmetric distribution centred at 0, probably stem:[N(0, 1)]. But when looking at some logs recently I was surprised by the actual wait times, so dug deeper.
+
+Take a look:
+
+[source,python]
+----
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "backoff==2.2.1",
+# ]
+# ///
+
+import backoff, time
+
+
+@backoff.on_exception(backoff.expo, Exception)
+def main() -> None:
+    start = time.time()
+    if hasattr(main, "end"):
+        diff = start - main.end
+        print(f"time between calls: {diff:.1f}s")
+    else:
+        print("first call")
+
+    main.end = time.time()
+    raise Exception
+
+
+if __name__ == "__main__":
+    main()
+----
+
+[source,console]
+----
+% uv run jitter.py
+first call
+time between calls: 0.5s
+time between calls: 0.1s
+time between calls: 0.0s
+time between calls: 8.0s
+time between calls: 0.8s
+time between calls: 28.6s
+time between calls: 16.1s
+<Ctrl-C>
+----
+
+These times are generally lower---the fifth wait was under a second, despite exponential backoff!---and more up-and-down than I expected.
+
+What's going on? It turns out that the default jitter works like this: get the next exponential, then wait for _up to_ that long, uniformly at random. In other words, the wait times are stem:[T_1 ~ U(0, 1)], then stem:[T_2 ~ U(0, 2)], then stem:[T_3 ~ U(0, 4)], ...
+
+The `backoff` docs are clear about this, if I'd read them properly.
+
+== OK, but _why_ full jitter?
+
+I've used `backoff` when
+
+1. hitting sometimes down APIs
+2. hitting rate-limited APIs
+3. fetching externally generated resources, e.g. objects someone else was putting in s3
+4. scraping sites that blocked suspected bots (I had permission, I promise)
+
+and in none of these cases was it useful to full jitter. In (1), (2) and (3), why jitter at all? In (4), jittering might make retries look human-like, but full jitter is surely no better a disguise than, say, adding normal noise.
+
+So again, _why_ full jitter?
+
+The `backoff` docs link to an AWS post: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/[Exponential Backoff And Jitter]. The post considers a setup where many clients, starting at the same time, request over the network to write a particular database row. If writes contend, only one commits: the rest are discarded and the clients have to retry. You want to keep low the time until all writes commit _and_ the total number of requests. You can keep the completion time low by retrying rapidly, but then writes often contend, so the request count is high. You can keep the request count low by spreading out requests, but then the completion time is high. So there's a tradeoff.
+
+The post gives some simulation results: full jittered exponential backoff took about 2.5 times as long, but only about 1/3 as many requests, as no backoff. A decent tradeoff. The key idea is that by full jittering exponential backoff you get an approximately constant rate of requests: low contention without idling, at least if you set the parameters well.
+
+It's clear that in this setup full jittered exponential backoff would have a lower completion time _and_ a lower request count than exponential backoff plus normal noise.
+
+And it's also clear in light of the post that what I said earlier needs to be qualified: jitter is no help when a _single_ client is hitting a rate-limited API, but is when _multiple_ clients are doing so, and that the post's conclusions carry over. For if you squint a bit then the two setups---hitting a rate-limited API and contending writes---look the same.
+
+== Summary
+
+The `backoff` package full jitters by default. This means wait times will be shorter than the innocent might expect. If you're using exponential backoff and are in a situation analogous to the one described in the AWS post, then full jitter makes sense. Else, I don't yet see the point.
