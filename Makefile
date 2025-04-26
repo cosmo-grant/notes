@@ -1,30 +1,10 @@
-html-all:
-  asciidoctor -D html/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai drafts/*.adoc publish/*.adoc
+.PHONY: publish
 
-html ADOC_FILENAME:
-  asciidoctor -D html/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai "{{ADOC_FILENAME}}"
+preview-all:
+	asciidoctor -D preview/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai drafts/*.adoc
 
 publish:
-  asciidoctor -D public/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai publish/*.adoc
-
-preview ADOC_FILENAME: (html ADOC_FILENAME)
-  #!/usr/bin/env sh
-  HTML_FILENAME="$(basename {{ADOC_FILENAME}} .adoc).html"
-  open ./html/$HTML_FILENAME
-
-
-refresh-index:
-  #!/usr/bin/env sh
-  BASE_URL="https://cosmo-grant.github.io/notes"
-  echo "== Notes\n" >publish/index.adoc
-  for NOTE in publish/*.adoc; do
-    if [ $NOTE = publish/index.adoc ]; then
-      continue
-    fi
-    NOTE_WITHOUT_EXTENSION=$(basename $NOTE .adoc)
-    TITLE=$(echo ${NOTE_WITHOUT_EXTENSION} | tr '_' ' ')
-    echo "* ${BASE_URL}/${NOTE_WITHOUT_EXTENSION}.html[$TITLE]" >>publish/index.adoc
-  done
+	asciidoctor -D docs/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai drafts/$(FILE)
 
 view:
-  open "https://cosmo-grant.github.io/notes/"
+	open "https://cosmo-grant.github.io/notes"
