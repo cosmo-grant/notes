@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>Notes</title>
+<title>with-values-select</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -437,30 +437,179 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
+<h1>with-values-select</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_notes">Notes</h2>
-<div class="sectionbody">
+<div class="paragraph">
+<p>To quickly test some SQL&#8212;&#8203;say, how the <code>jsonb</code> containment operator <code>@&gt;</code> works in PostgreSQL&#8212;&#8203;I used to connect to a <code>playground</code> database in my local instance and run something like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">create table my_tbl (
+    foo jsonb,
+    bar jsonb
+);
+
+insert into my_tbl values
+('[1, 2, 3]', '1'),
+('[1, 2, 3]', '[1, 2, 3]'),
+('[1, 2, 3]', '[]'),
+('[1, 2, 3]', '[3, 1, 2, 2]'),
+('[1, [2, 3]]', '[2, 3]'),
+('[1, [2, 3]]', '[[2]]');
+
+select
+    foo,
+    bar,
+    foo @&gt; bar as foo_contains_bar
+from my_tbl;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This approach gets the job done, but has some annoying features.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html">how npm picks registries</a></p>
+<p>You have to connect to <code>playground</code> first. Creating and dropping random tables in a database you care about is asking for trouble.</p>
 </li>
 <li>
-<p><a href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
+<p>Unless you&#8217;re disciplined about cleaning up after yourself, <code>playground</code> will get cluttered. In mine, I have tables <code>bar</code>, <code>blah</code>, <code>foo</code>, <code>non_empty_tbl</code>, <code>tbl</code>, and <code>tmp_tbl</code>. No, I don&#8217;t remember what contains what, or why, or which are worth keeping.</p>
 </li>
 <li>
-<p><a href="https://cosmo-grant.github.io/notes/with_values_select.html">with-values-select</a></p>
+<p>It&#8217;s awkward to share your experiment by copy-pasting the SQL. What if your colleague doesn&#8217;t have a <code>playground</code> set up, or their <code>playground</code> already has a <code>my_tbl</code>?</p>
+</li>
+<li>
+<p>If you want to change your test cases, you have to <code>truncate my_tbl</code> first, then re-insert, else things get messy.</p>
+</li>
+<li>
+<p>It&#8217;s three statements, which have to be kept and run together. But experiments like this are typically rough-and-ready: grab a console, try some things, go back to what you were working on. It&#8217;s easy for the statements to get separated.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>There must be a better way!</p>
+</div>
+<div class="paragraph">
+<p>How about this?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">with my_tbl (
+    foo, bar) as (
+    values ('[1, 2, 3]'::jsonb, '1'::jsonb),
+    ('[1, 2, 3]', '[1, 2, 3]'),
+    ('[1, 2, 3]', '[]'),
+    ('[1, 2, 3]', '[3, 1, 2, 2]'),
+    ('[1, [2, 3]]', '[2, 3]'),
+    ('[1, [2, 3]]', '[[2]]')
+)
+
+select
+    foo,
+    bar,
+    foo @&gt; bar as foo_contains_bar
+from my_tbl;</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>I had assumed that <code>values</code> could only be used as part of an <code>insert</code>. Not so: it&#8217;s a command in its own right, which can be used to hard-code a table without writing to disk. For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">values (1, 'one'), (2, 'two'), (3, 'three');</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is valid SQL, "effectively equivalent", say the docs, to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">select 1 as column1, 'one' as column2
+union all
+select 2, 'two'
+union all
+select 3, 'three';</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This <code>with-values-select</code> approach avoids the annoying features of <code>create-insert-select</code> above.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Because you don&#8217;t create or drop tables, and nothing is written to disk, it&#8217;s relatively safe to run such experiments anywhere: no need to connect to <code>playground</code> first. Of course, I&#8217;m not saying you should run experimental SQL when connected to your production database. But <code>with-values-select</code> is pretty safe, much safer than <code>create-insert-select</code>, and safe enough, I think, to run even in a database you care a bit about.</p>
+</li>
+<li>
+<p>No writing to disk, so no clutter.</p>
+</li>
+<li>
+<p>Want to share it with a colleague? Just copy-paste. They don&#8217;t need a <code>playground</code>, and it doesn&#8217;t matter if they already have a <code>my_tbl</code>.</p>
+</li>
+<li>
+<p>To change your test cases, just change your test cases: no truncating required.</p>
+</li>
+<li>
+<p>Because it&#8217;s one statement not three, it&#8217;ll probably survive intact longer.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>So: <code>with-values-select</code> beats <code>create-insert-select</code>.</p>
+</div>
+<div class="paragraph">
+<p>Oh, and the answers:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">foo</th>
+<th class="tableblock halign-left valign-top">bar</th>
+<th class="tableblock halign-left valign-top">foo_contains_bar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, 2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, 2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, 2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, 2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, 2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[3, 1, 2, 2]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, [2, 3]]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[2, 3]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[1, [2, 3]]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">[[2]]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-29 01:07:35 +0100
+Last updated 2025-04-29 01:25:55 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
