@@ -65,7 +65,7 @@ time between calls: 16.1s
 <Ctrl-C>
 ----
 
-These times are generally lower--the fifth wait was under a second, despite exponential backoff!--and more up-and-down than I expected.
+These times are generally lower -- the fifth wait was under a second, despite exponential backoff! -- and more up-and-down than I expected.
 
 What's going on? It turns out that the default jitter works like this: get the next exponential, then wait for _up to_ that long, uniformly at random. In other words, the wait times are stem:[T_1 ~ U(0, 1)], then stem:[T_2 ~ U(0, 2)], then stem:[T_3 ~ U(0, 4)], ...
 
@@ -90,7 +90,7 @@ The post gives some simulation results: full jittered exponential backoff took a
 
 It's clear that in this setup full jittered exponential backoff would have a lower completion time _and_ a lower request count than exponential backoff plus normal noise.
 
-And it's also clear in light of the post that what I said earlier needs to be qualified: jitter is no help when a _single_ client is hitting a rate-limited API, but is when _multiple_ clients are doing so, and that the post's conclusions carry over. For if you squint a bit then the two setups--hitting a rate-limited API and contending writes--look the same.
+And it's also clear in light of the post that what I said earlier needs to be qualified: jitter is no help when a _single_ client is hitting a rate-limited API, but is when _multiple_ clients are doing so, and that the post's conclusions carry over. For if you squint a bit then the two setups -- hitting a rate-limited API and contending writes -- look the same.
 
 == Summary
 

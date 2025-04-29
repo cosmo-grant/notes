@@ -511,7 +511,7 @@ time between calls: 16.1s
 </div>
 </div>
 <div class="paragraph">
-<p>These times are generally lower---the fifth wait was under a second, despite exponential backoff!---and more up-and-down than I expected.</p>
+<p>These times are generally lower&#8201;&#8212;&#8201;the fifth wait was under a second, despite exponential backoff!&#8201;&#8212;&#8201;and more up-and-down than I expected.</p>
 </div>
 <div class="paragraph">
 <p>What&#8217;s going on? It turns out that the default jitter works like this: get the next exponential, then wait for <em>up to</em> that long, uniformly at random. In other words, the wait times are \$T_1 ~ U(0, 1)\$, then \$T_2 ~ U(0, 2)\$, then \$T_3 ~ U(0, 4)\$, &#8230;&#8203;</p>
@@ -553,13 +553,13 @@ time between calls: 16.1s
 <p>The <code>backoff</code> docs link to an AWS post: <a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/">Exponential Backoff And Jitter</a>. The post considers a setup where many clients, starting at the same time, request over the network to write a particular database row. If writes contend, only one commits: the rest are discarded and the clients have to retry. You want to keep low the time until all writes commit <em>and</em> the total number of requests. You can keep the completion time low by retrying rapidly, but then writes often contend, so the request count is high. You can keep the request count low by spreading out requests, but then the completion time is high. So there&#8217;s a tradeoff.</p>
 </div>
 <div class="paragraph">
-<p>The post gives some simulation results: full jittered exponential backoff took about 2.5 times as long, but only about 1/3 as many requests, as no backoff. A decent tradeoff. The key idea is that by full jittering exponential backoff you get an approximately constant rate of requests: low contention without idling, at least if you set the parameters well.</p>
+<p>The post gives some simulation results: full jittered exponential backoff took about 2.5 times as long, but only about 1/3 as many requests, as no backoff. A decent tradeoff, typically. The key idea is that by full jittering exponential backoff you get an approximately constant rate of requests: low contention without idling, at least if you set the parameters well.</p>
 </div>
 <div class="paragraph">
 <p>It&#8217;s clear that in this setup full jittered exponential backoff would have a lower completion time <em>and</em> a lower request count than exponential backoff plus normal noise.</p>
 </div>
 <div class="paragraph">
-<p>And it&#8217;s also clear in light of the post that what I said earlier needs to be qualified: jitter is no help when a <em>single</em> client is hitting a rate-limited API, but is when <em>multiple</em> clients are doing so, and that the post&#8217;s conclusions carry over. For if you squint a bit then the two setups---hitting a rate-limited API and contending writes---look the same.</p>
+<p>And it&#8217;s also clear in light of the post that what I said earlier needs to be qualified: jitter is no help when a <em>single</em> client is hitting a rate-limited API, but is when <em>multiple</em> clients are doing so, and that the post&#8217;s conclusions carry over. For if you squint a bit then the two setups&#8201;&#8212;&#8201;hitting a rate-limited API and contending writes&#8201;&#8212;&#8201;look the same.</p>
 </div>
 </div>
 </div>
@@ -567,14 +567,14 @@ time between calls: 16.1s
 <h2 id="_summary">Summary</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>backoff</code> package full jitters by default. This means wait times will be shorter than the innocent might expect. If you&#8217;re using exponential backoff and are in a situation analogous to the one described in the AWS post, then full jitter makes sense. Else, I don&#8217;t yet see the point.</p>
+<p>The <code>backoff</code> package full jitters by default. This means wait times will be shorter than the innocent might expect. If you&#8217;re using exponential backoff and are in a contending writes-type situation, then full jitter makes sense. Else, I don&#8217;t yet see the point.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-27 00:21:18 +0100
+Last updated 2025-04-29 01:34:26 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
