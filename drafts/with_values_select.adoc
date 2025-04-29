@@ -1,0 +1,105 @@
+= with-values-select
+
+To quickly test some SQL--say, how the `jsonb` containment operator `@>` works in PostgreSQL--I used to connect to a `playground` database in my local instance and run something like this:
+
+[source,sql]
+----
+create table my_tbl (
+    foo jsonb,
+    bar jsonb
+);
+
+insert into my_tbl values
+('[1, 2, 3]', '1'),
+('[1, 2, 3]', '[1, 2, 3]'),
+('[1, 2, 3]', '[]'),
+('[1, 2, 3]', '[3, 1, 2, 2]'),
+('[1, [2, 3]]', '[2, 3]'),
+('[1, [2, 3]]', '[[2]]');
+
+select
+    foo,
+    bar,
+    foo @> bar as foo_contains_bar
+from my_tbl;
+----
+
+This approach gets the job done, but has some annoying features.
+
+* You have to connect to `playground` first. Creating and dropping random tables in a database you care about is asking for trouble.
+
+* Unless you're disciplined about cleaning up after yourself, `playground` will get cluttered. In mine, I have tables `bar`, `blah`, `foo`, `non_empty_tbl`, `tbl`, and `tmp_tbl`. No, I don't remember what contains what, or why, or which are worth keeping.
+
+* It's awkward to share your experiment by copy-pasting the SQL. What if your colleague doesn't have a `playground` set up, or their `playground` already has a `my_tbl`?
+
+* If you want to change your test cases, you have to `truncate my_tbl` first, then re-insert, else things get messy.
+
+* It's three statements, which have to be kept and run together. But experiments like this are typically rough-and-ready: grab a console, try some things, go back to what you were working on. It's easy for the statements to get separated.
+
+There must be a better way!
+
+How about this?
+
+[source, sql]
+----
+with my_tbl (
+    foo, bar) as (
+    values ('[1, 2, 3]'::jsonb, '1'::jsonb),
+    ('[1, 2, 3]', '[1, 2, 3]'),
+    ('[1, 2, 3]', '[]'),
+    ('[1, 2, 3]', '[3, 1, 2, 2]'),
+    ('[1, [2, 3]]', '[2, 3]'),
+    ('[1, [2, 3]]', '[[2]]')
+)
+
+select
+    foo,
+    bar,
+    foo @> bar as foo_contains_bar
+from my_tbl;
+----
+
+I had assumed that `values` could only be used as part of an `insert`. Not so: it's a command in its own right, which can be used to hard-code a table without writing to disk. For example,
+
+[source, sql]
+----
+values (1, 'one'), (2, 'two'), (3, 'three');
+----
+
+is valid SQL, "effectively equivalent", say the docs, to
+
+[source, sql]
+----
+select 1 as column1, 'one' as column2
+union all
+select 2, 'two'
+union all
+select 3, 'three';
+----
+
+This `with-values-select` approach avoids the annoying features of `create-insert-select` above.
+
+* Because you don't create or drop tables, and nothing is written to disk, it's relatively safe to run such experiments anywhere: no need to connect to `playground` first. Of course, I'm not saying you should run experimental SQL when connected to your production database. But `with-values-select` is pretty safe, much safer than `create-insert-select`, and safe enough, I think, to run even in a database you care a bit about.
+
+* No writing to disk, so no clutter.
+
+* Want to share it with a colleague? Just copy-paste. They don't need a `playground`, and it doesn't matter if they already have a `my_tbl`.
+
+* To change your test cases, just change your test cases: no truncating required.
+
+* Because it's one statement not three, it'll probably survive intact longer.
+
+So: `with-values-select` beats `create-insert-select`.
+
+Oh, and the answers:
+
+[cols="3*", options="header"]
+|======================================================
+| foo             | bar            | foo_contains_bar
+| [1, 2, 3]       | 1              | true
+| [1, 2, 3]       | [1, 2, 3]      | true
+| [1, 2, 3]       | []             | true
+| [1, 2, 3]       | [3, 1, 2, 2]   | true
+| [1, [2, 3]]     | [2, 3]         | false
+| [1, [2, 3]]     | [[2]]          | true
+|======================================================

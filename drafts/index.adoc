@@ -2,3 +2,4 @@
 
 * https://cosmo-grant.github.io/notes/how_npm_picks_registries.html[how npm picks registries]
 * https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html[how backoff jitters and why]
+* https://cosmo-grant.github.io/notes/with_values_select.html[with-values-select]
