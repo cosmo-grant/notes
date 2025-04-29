@@ -1,6 +1,6 @@
-.PHONY: publish
+.PHONY: publish preview
 
-preview-all:
+html:
 	asciidoctor -D preview/ -a source-highlighter=highlightjs -a highlightjs-theme=monokai drafts/*.adoc
 
 publish:
@@ -8,3 +8,6 @@ publish:
 
 view:
 	open "https://cosmo-grant.github.io/notes"
+
+preview:
+	open "./preview/index.html"
