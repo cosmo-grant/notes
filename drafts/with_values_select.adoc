@@ -1,27 +1,32 @@
 = with-values-select
 
-To quickly test some SQL--say, how the `jsonb` containment operator `@>` works in PostgreSQL--I used to connect to a `playground` database in my local instance and run something like this:
+To quickly test some SQL -- say, how to query our `payment_requests` table for how many times each request had failed attempts -- I used to connect to a `playground` database in my local instance and run something like this:
 
 [source,sql]
 ----
-create table my_tbl (
-    foo jsonb,
-    bar jsonb
+-- create simple version of the actual table
+create table payment_requests (
+    attempts jsonb
 );
 
-insert into my_tbl values
-('[1, 2, 3]', '1'),
-('[1, 2, 3]', '[1, 2, 3]'),
-('[1, 2, 3]', '[]'),
-('[1, 2, 3]', '[3, 1, 2, 2]'),
-('[1, [2, 3]]', '[2, 3]'),
-('[1, [2, 3]]', '[[2]]');
+-- insert test data
+insert into payment_requests values
+('[{"status": "FAILED"}]'::jsonb),
+('[{"status": "FAILED"}, {"status": "FAILED"}]'),
+('[{"status": "FAILED"}, {"status": "DECLINED"}]'),
+('[{"status": "DECLINED"}, {"status": "FAILED"}, {"status": "FAILED"}]'),
+('[{"status": "FAILED"}, {"status": "DECLINED"}, {"status": "FAILED"}]');
 
+-- hack my way to a working query
 select
-    foo,
-    bar,
-    foo @> bar as foo_contains_bar
-from my_tbl;
+    (
+        select count(*)
+        from jsonb_array_elements(attempts) as attempt
+        where attempt ->> 'status' = 'FAILED'
+    ) as num_failures,
+    count(*)
+from payment_requests
+group by num_failures;
 ----
 
 This approach gets the job done, but has some annoying features.
@@ -30,9 +35,9 @@ This approach gets the job done, but has some annoying features.
 
 * Unless you're disciplined about cleaning up after yourself, `playground` will get cluttered. In mine, I have tables `bar`, `blah`, `foo`, `non_empty_tbl`, `tbl`, and `tmp_tbl`. No, I don't remember what contains what, or why, or which are worth keeping.
 
-* It's awkward to share your experiment by copy-pasting the SQL. What if your colleague doesn't have a `playground` set up, or their `playground` already has a `my_tbl`?
+* It's awkward to share your experiment by copy-pasting the SQL. What if your colleague doesn't have a `playground` set up, or their `playground` already has a `payment_requests` table?
 
-* If you want to change your test cases, you have to `truncate my_tbl` first, then re-insert, else things get messy.
+* If you want to change your test cases, you have to `truncate payment_requests` first, then re-insert, else things get messy.
 
 * It's three statements, which have to be kept and run together. But experiments like this are typically rough-and-ready: grab a console, try some things, go back to what you were working on. It's easy for the statements to get separated.
 
@@ -42,21 +47,24 @@ How about this?
 
 [source, sql]
 ----
-with my_tbl (
-    foo, bar) as (
-    values ('[1, 2, 3]'::jsonb, '1'::jsonb),
-    ('[1, 2, 3]', '[1, 2, 3]'),
-    ('[1, 2, 3]', '[]'),
-    ('[1, 2, 3]', '[3, 1, 2, 2]'),
-    ('[1, [2, 3]]', '[2, 3]'),
-    ('[1, [2, 3]]', '[[2]]')
+with payment_requests (attempts) as (
+    values
+    ('[{"status": "FAILED"}]'::jsonb),
+    ('[{"status": "FAILED"}, {"status": "FAILED"}]'),
+    ('[{"status": "FAILED"}, {"status": "DECLINED"}]'),
+    ('[{"status": "DECLINED"}, {"status": "FAILED"}, {"status": "FAILED"}]'),
+    ('[{"status": "FAILED"}, {"status": "DECLINED"}, {"status": "FAILED"}]')
 )
 
 select
-    foo,
-    bar,
-    foo @> bar as foo_contains_bar
-from my_tbl;
+    (
+        select count(*)
+        from jsonb_array_elements(attempts) as attempt
+        where attempt ->> 'status' = 'FAILED'
+    ) as num_failures,
+    count(*)
+from payment_requests
+group by num_failures;
 ----
 
 I had assumed that `values` could only be used as part of an `insert`. Not so: it's a command in its own right, which can be used to hard-code a table without writing to disk. For example,
@@ -83,23 +91,10 @@ This `with-values-select` approach avoids the annoying features of `create-inser
 
 * No writing to disk, so no clutter.
 
-* Want to share it with a colleague? Just copy-paste. They don't need a `playground`, and it doesn't matter if they already have a `my_tbl`.
+* Want to share it with a colleague? Just copy-paste. They don't need a `playground`, and it doesn't matter if they already have a `payment_requests` table.
 
 * To change your test cases, just change your test cases: no truncating required.
 
 * Because it's one statement not three, it'll probably survive intact longer.
 
 So: `with-values-select` beats `create-insert-select`.
-
-Oh, and the answers:
-
-[cols="3*", options="header"]
-|======================================================
-| foo             | bar            | foo_contains_bar
-| [1, 2, 3]       | 1              | true
-| [1, 2, 3]       | [1, 2, 3]      | true
-| [1, 2, 3]       | []             | true
-| [1, 2, 3]       | [3, 1, 2, 2]   | true
-| [1, [2, 3]]     | [2, 3]         | false
-| [1, [2, 3]]     | [[2]]          | true
-|======================================================
