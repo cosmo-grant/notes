@@ -61,4 +61,6 @@ It turns out that `backoff` calculates `elapsed` _before_ calling the target fun
 
 In our example: just before the first attempt the elapsed time is zero seconds, so when the attempt raises an exception two seconds later, `backoff` backs off for three seconds; then just before the second attempt the elapsed time is five seconds, so when the attempt raises an exception two seconds later, `backoff` backs off for one second; then just before the third attempt the elapsed time is eight seconds, so when the attempt raises an exception two seconds later, `backoff` re-raises it.
 
+image::../images/backoff_max_time.png[]
+
 I find this design odd. Why calculate the elapsed time before calling the target function, but use it after? It means that if `max_time` is crossed _while_ the target function is running, `backoff` will try again. And, given that, why cap the back off at `max_time - elapsed`?  This might be reasonable enough if it helped ensure (so far as could be ensured -- `backoff` can't predict how long the target function might take) that the total time stays below `max_time`. But `backoff` has already abandoned that aim: as we've seen, it will happily call the target function after `max_time`. Capping the back off just adds to the confusion.

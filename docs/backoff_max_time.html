@@ -509,13 +509,18 @@ Exception</code></pre>
 <div class="paragraph">
 <p>In our example: just before the first attempt the elapsed time is zero seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> backs off for three seconds; then just before the second attempt the elapsed time is five seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> backs off for one second; then just before the third attempt the elapsed time is eight seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> re-raises it.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/backoff_max_time.png" alt="backoff max time">
+</div>
+</div>
 <div class="paragraph">
-<p>I find this design odd. Why calculate the elapsed time before calling the target function, but use it after, when any amount of time may have passed in between? It means that if <code>max_time</code> is crossed <em>while</em> the target function is running, <code>backoff</code> will try again. And, given that, why cap the back off at <code>max_time - elapsed</code>?  This might be reasonable enough if it helped ensure (so far as could be ensured&#8201;&#8212;&#8201;<code>backoff</code> can&#8217;t predict how long the target function might take) that the total time stays below <code>max_time</code>. But <code>backoff</code> has already abandoned that aim: as we&#8217;ve seen, it will happily call the target function after <code>max_time</code>. Capping the back off just adds to the confusion.</p>
+<p>I find this design odd. Why calculate the elapsed time before calling the target function, but use it after? It means that if <code>max_time</code> is crossed <em>while</em> the target function is running, <code>backoff</code> will try again. And, given that, why cap the back off at <code>max_time - elapsed</code>?  This might be reasonable enough if it helped ensure (so far as could be ensured&#8201;&#8212;&#8201;<code>backoff</code> can&#8217;t predict how long the target function might take) that the total time stays below <code>max_time</code>. But <code>backoff</code> has already abandoned that aim: as we&#8217;ve seen, it will happily call the target function after <code>max_time</code>. Capping the back off just adds to the confusion.</p>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-07 01:30:40 +0100
+Last updated 2025-05-07 11:35:01 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
