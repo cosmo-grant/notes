@@ -22,6 +22,7 @@ START = time.time()
 def foo():
     print(f"starting foo() at t={time.time() - START:.0f}")
     time.sleep(2)
+    print(f"raising exception at t={time.time() - START:.0f}")
     raise Exception
 
 
@@ -34,13 +35,16 @@ I assumed
 [source,console]
 ----
 starting foo() at t=0
+raising exception at t=2
 starting foo() at t=5
+raising exception at t=7
 Exception
 ----
 
 on the basis that seven seconds have elapsed when the second attempt raises an exception, and we set `max_time` to six, so `backoff` will re-raise it.
 
-After all, the `backoff` docs say that `max_time` "specifies the maximum amount of total time in seconds that can elapse before giving up." It can't interrupt `foo()` of course, but it sure sounds like when control passes back to `backoff`, if we've passed `max_time`, then it'll re-raise exceptions.
+After all, the `backoff` docs say that `max_time` "specifies the maximum amount of total time in seconds that can elapse before giving up."
+It can't interrupt `foo()` of course, but it sure sounds like when control passes back to `backoff`, if we've passed `max_time`, then it'll re-raise exceptions.
 
 In fact:
 
@@ -48,19 +52,78 @@ In fact:
 ----
 % uv run backoff_test.py
 starting foo() at t=0
+raising exception at t=2
 starting foo() at t=5
+raising exception at t=7
 starting foo() at t=8
+raising exception at t=10
 Exception
 ----
 
-This is striking for two reasons: an attempt _starts_ at t=8, after `max_time` has elapsed; and the backoff between the second and third attempts was _one_ second, despite `backoff.constant` and `interval=3`. `max_time` isn't the max time and `backoff.constant` isn't constant.
+This is striking for two reasons: an attempt _starts_ at t=8, after `max_time` has elapsed;
+and the backoff between the second and third attempts was _one_ second, despite `backoff.constant` and `interval=3`.
+`max_time` isn't the max time and `backoff.constant` isn't constant!
 
 What's going on?
 
-It turns out that `backoff` calculates `elapsed` _before_ calling the target function. Then _after_ calling the target function, no matter how much time has passed meanwhile, if `elapsed < max_time` it backs off for `min(interval, max_time - elapsed)`. In effect, `backoff` decides _before_ an attempt whether to back off and how long for, if an exception is raised.
+It turns out that `backoff` calculates `elapsed` _before_ calling the target function.
+Then _after_ calling the target function, no matter how much time has passed meanwhile, if `elapsed < max_time` it backs off for `min(interval, max_time - elapsed)`.
+In effect, `backoff` decides _before_ an attempt whether to back off and how long for, if an exception is raised.
 
-In our example: just before the first attempt the elapsed time is zero seconds, so when the attempt raises an exception two seconds later, `backoff` backs off for three seconds; then just before the second attempt the elapsed time is five seconds, so when the attempt raises an exception two seconds later, `backoff` backs off for one second; then just before the third attempt the elapsed time is eight seconds, so when the attempt raises an exception two seconds later, `backoff` re-raises it.
+In our example:
+just before the first attempt the elapsed time is zero seconds, so `backoff` decides it will back off for three seconds if an exception is raised;
+then just before the second attempt the elapsed time is five seconds, so `backoff` decides it will back off for one second if an exception is raised;
+then just before the third attempt the elapsed time is eight seconds, so `backoff` decides it will re-raise an exception.
 
 image::../images/backoff_max_time.png[]
 
-I find this design odd. Why calculate the elapsed time before calling the target function, but use it after? It means that if `max_time` is crossed _while_ the target function is running, `backoff` will try again. And, given that, why cap the back off at `max_time - elapsed`?  This might be reasonable enough if it helped ensure (so far as could be ensured -- `backoff` can't predict how long the target function might take) that the total time stays below `max_time`. But `backoff` has already abandoned that aim: as we've seen, it will happily call the target function after `max_time`. Capping the back off just adds to the confusion.
+I find this design odd.
+Why _calculate_ the elapsed time before calling the target function, but _use_ it after?
+It means that if `max_time` is crossed _while_ the target function is running, `backoff` will try again.
+And, given that, why cap the back off at `max_time - elapsed`?
+This might be reasonable enough if it helped ensure (so far as could be ensured -- `backoff` can't predict how long the target function might take) that the total time stays below `max_time`.
+But `backoff` has already abandoned that aim: as we've seen, it will happily call the target function after `max_time`.
+Capping the back off just adds to the confusion.
+
+A tiny change makes `backoff` behave as I originally expected:
+
+[source,diff]
+----
+commit 8d77daadf98ad86e23e15432fccf8cf7ed571e16
+Author: Cosmo Grant <cosmo.grant@postcodelottery.co.uk>
+Date:   Wed May 7 12:04:26 2025 +0100
+
+    calculate elapsed time _after_ calling the target function
+
+diff --git a/backoff/_sync.py b/backoff/_sync.py
+index 4371e16..14ed831 100644
+--- a/backoff/_sync.py
++++ b/backoff/_sync.py
+@@ -92,18 +92,18 @@ def retry_exception(target, wait_gen, exception,
+         wait = _init_wait_gen(wait_gen, wait_gen_kwargs)
+         while True:
+             tries += 1
+-            elapsed = timedelta.total_seconds(datetime.datetime.now() - start)
+-            details = {
+-                "target": target,
+-                "args": args,
+-                "kwargs": kwargs,
+-                "tries": tries,
+-                "elapsed": elapsed,
+-            }
+
+             try:
+                 ret = target(*args, **kwargs)
+             except exception as e:
++                elapsed = timedelta.total_seconds(datetime.datetime.now() - start)
++                details = {
++                    "target": target,
++                    "args": args,
++                    "kwargs": kwargs,
++                    "tries": tries,
++                    "elapsed": elapsed,
++                }
+                 max_tries_exceeded = (tries == max_tries_value)
+                 max_time_exceeded = (max_time_value is not None and
+                                      elapsed >= max_time_value)
+----
