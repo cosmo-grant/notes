@@ -1,6 +1,6 @@
 = with-values-select
 
-To quickly test some SQL -- say, how to query our `payment_requests` table for how many times each request had failed attempts -- I used to connect to a `playground` database in my local instance and run something like this:
+To quickly test some SQL -- say, how to query our `payment_requests` table for how many failed attempts each request had -- I used to connect to a `playground` database in my local instance and run something like this:
 
 [source,sql]
 ----
@@ -10,6 +10,7 @@ create table payment_requests (
 );
 
 -- insert test data
+-- each array entry is a request attempt
 insert into payment_requests values
 ('[{"status": "FAILED"}]'::jsonb),
 ('[{"status": "FAILED"}, {"status": "FAILED"}]'),
