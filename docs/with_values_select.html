@@ -441,7 +441,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="content">
 <div class="paragraph">
-<p>To quickly test some SQL&#8201;&#8212;&#8201;say, how to query our <code>payment_requests</code> table for how many times each request had failed attempts&#8201;&#8212;&#8201;I used to connect to a <code>playground</code> database in my local instance and run something like this:</p>
+<p>To quickly test some SQL&#8201;&#8212;&#8201;say, how to query our <code>payment_requests</code> table for how many failed attempts each request had&#8201;&#8212;&#8201;I used to connect to a <code>playground</code> database in my local instance and run something like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -451,6 +451,7 @@ create table payment_requests (
 );
 
 -- insert test data
+-- each array entry is a request attempt
 insert into payment_requests values
 ('[{"status": "FAILED"}]'::jsonb),
 ('[{"status": "FAILED"}, {"status": "FAILED"}]'),
@@ -564,11 +565,6 @@ select 3, 'three';</code></pre>
 </div>
 <div class="paragraph">
 <p>So: <code>with-values-select</code> beats <code>create-insert-select</code>.</p>
-</div>
-</div>
-<div id="footer">
-<div id="footer-text">
-Last updated 2025-04-29 11:59:21 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
