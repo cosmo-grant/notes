@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.23">
+<meta name="generator" content="Asciidoctor 2.0.26">
 <title>backoff&#8217;s max time</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -116,7 +116,6 @@ h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title str
 :not(pre):not([class^=L])>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background:#f7f7f8;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
 pre{color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;line-height:1.45;text-rendering:optimizeSpeed}
 pre code,pre pre{color:inherit;font-size:inherit;line-height:inherit}
-pre>code{display:block}
 pre.nowrap,pre.nowrap pre{white-space:pre;word-wrap:normal}
 em em{font-style:normal}
 strong strong{font-weight:400}
@@ -219,6 +218,7 @@ table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}
 .literalblock pre,.listingblock>.content>pre:not(.highlight),.listingblock>.content>pre[class=highlight],.listingblock>.content>pre[class^="highlight "]{background:#f7f7f8}
 .literalblock.output pre{color:#f7f7f8;background:rgba(0,0,0,.9)}
 .listingblock>.content{position:relative}
+.listingblock pre>code{display:block}
 .listingblock code[data-lang]::before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:inherit;opacity:.5}
 .listingblock:hover code[data-lang]::before{display:block}
 .listingblock.terminal pre .command::before{content:attr(data-prompt);padding-right:.5em;color:inherit;opacity:.5}
@@ -462,6 +462,7 @@ START = time.time()
 def foo():
     print(f"starting foo() at t={time.time() - START:.0f}")
     time.sleep(2)
+    print(f"raising exception at t={time.time() - START:.0f}")
     raise Exception
 
 
@@ -475,7 +476,9 @@ if __name__ == "__main__":
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">starting foo() at t=0
+raising exception at t=2
 starting foo() at t=5
+raising exception at t=7
 Exception</code></pre>
 </div>
 </div>
@@ -483,7 +486,8 @@ Exception</code></pre>
 <p>on the basis that seven seconds have elapsed when the second attempt raises an exception, and we set <code>max_time</code> to six, so <code>backoff</code> will re-raise it.</p>
 </div>
 <div class="paragraph">
-<p>After all, the <code>backoff</code> docs say that <code>max_time</code> "specifies the maximum amount of total time in seconds that can elapse before giving up." It can&#8217;t interrupt <code>foo()</code> of course, but it sure sounds like when control passes back to <code>backoff</code>, if we&#8217;ve passed <code>max_time</code>, then it&#8217;ll re-raise exceptions.</p>
+<p>After all, the <code>backoff</code> docs say that <code>max_time</code> "specifies the maximum amount of total time in seconds that can elapse before giving up."
+It can&#8217;t interrupt <code>foo()</code> of course, but it sure sounds like when control passes back to <code>backoff</code>, if we&#8217;ve passed <code>max_time</code>, then it&#8217;ll re-raise exceptions.</p>
 </div>
 <div class="paragraph">
 <p>In fact:</p>
@@ -492,22 +496,32 @@ Exception</code></pre>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">% uv run backoff_test.py
 starting foo() at t=0
+raising exception at t=2
 starting foo() at t=5
+raising exception at t=7
 starting foo() at t=8
+raising exception at t=10
 Exception</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This is striking for two reasons: an attempt <em>starts</em> at t=8, after <code>max_time</code> has elapsed; and the backoff between the second and third attempts was <em>one</em> second, despite <code>backoff.constant</code> and <code>interval=3</code>. <code>max_time</code> isn&#8217;t the max time and <code>backoff.constant</code> isn&#8217;t constant.</p>
+<p>This is striking for two reasons: an attempt <em>starts</em> at t=8, after <code>max_time</code> has elapsed;
+and the backoff between the second and third attempts was <em>one</em> second, despite <code>backoff.constant</code> and <code>interval=3</code>.
+<code>max_time</code> isn&#8217;t the max time and <code>backoff.constant</code> isn&#8217;t constant!</p>
 </div>
 <div class="paragraph">
 <p>What&#8217;s going on?</p>
 </div>
 <div class="paragraph">
-<p>It turns out that <code>backoff</code> calculates <code>elapsed</code> <em>before</em> calling the target function. Then <em>after</em> calling the target function, no matter how much time has passed meanwhile, if <code>elapsed &lt; max_time</code> it backs off for <code>min(interval, max_time - elapsed)</code>. In effect, <code>backoff</code> decides <em>before</em> an attempt whether to back off and how long for, if an exception is raised.</p>
+<p>It turns out that <code>backoff</code> calculates <code>elapsed</code> <em>before</em> calling the target function.
+Then <em>after</em> calling the target function, no matter how much time has passed meanwhile, if <code>elapsed &lt; max_time</code> it backs off for <code>min(interval, max_time - elapsed)</code>.
+In effect, <code>backoff</code> decides <em>before</em> an attempt whether to back off and how long for, if an exception is raised.</p>
 </div>
 <div class="paragraph">
-<p>In our example: just before the first attempt the elapsed time is zero seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> backs off for three seconds; then just before the second attempt the elapsed time is five seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> backs off for one second; then just before the third attempt the elapsed time is eight seconds, so when the attempt raises an exception two seconds later, <code>backoff</code> re-raises it.</p>
+<p>In our example:
+just before the first attempt the elapsed time is zero seconds, so <code>backoff</code> decides it will back off for three seconds if an exception is raised;
+then just before the second attempt the elapsed time is five seconds, so <code>backoff</code> decides it will back off for one second if an exception is raised;
+then just before the third attempt the elapsed time is eight seconds, so <code>backoff</code> decides it will re-raise an exception.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -515,12 +529,62 @@ Exception</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>I find this design odd. Why calculate the elapsed time before calling the target function, but use it after? It means that if <code>max_time</code> is crossed <em>while</em> the target function is running, <code>backoff</code> will try again. And, given that, why cap the back off at <code>max_time - elapsed</code>?  This might be reasonable enough if it helped ensure (so far as could be ensured&#8201;&#8212;&#8201;<code>backoff</code> can&#8217;t predict how long the target function might take) that the total time stays below <code>max_time</code>. But <code>backoff</code> has already abandoned that aim: as we&#8217;ve seen, it will happily call the target function after <code>max_time</code>. Capping the back off just adds to the confusion.</p>
+<p>I find this design odd.
+Why <em>calculate</em> the elapsed time before calling the target function, but <em>use</em> it after?
+It means that if <code>max_time</code> is crossed <em>while</em> the target function is running, <code>backoff</code> will try again.
+And, given that, why cap the back off at <code>max_time - elapsed</code>?
+This might be reasonable enough if it helped ensure (so far as could be ensured&#8201;&#8212;&#8201;<code>backoff</code> can&#8217;t predict how long the target function might take) that the total time stays below <code>max_time</code>.
+But <code>backoff</code> has already abandoned that aim: as we&#8217;ve seen, it will happily call the target function after <code>max_time</code>.
+Capping the back off just adds to the confusion.</p>
+</div>
+<div class="paragraph">
+<p>A tiny change makes <code>backoff</code> behave as I originally expected:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-diff hljs" data-lang="diff">commit 8d77daadf98ad86e23e15432fccf8cf7ed571e16
+Author: Cosmo Grant &lt;cosmo.grant@postcodelottery.co.uk&gt;
+Date:   Wed May 7 12:04:26 2025 +0100
+
+    calculate elapsed time _after_ calling the target function
+
+diff --git a/backoff/_sync.py b/backoff/_sync.py
+index 4371e16..14ed831 100644
+--- a/backoff/_sync.py
++++ b/backoff/_sync.py
+@@ -92,18 +92,18 @@ def retry_exception(target, wait_gen, exception,
+         wait = _init_wait_gen(wait_gen, wait_gen_kwargs)
+         while True:
+             tries += 1
+-            elapsed = timedelta.total_seconds(datetime.datetime.now() - start)
+-            details = {
+-                "target": target,
+-                "args": args,
+-                "kwargs": kwargs,
+-                "tries": tries,
+-                "elapsed": elapsed,
+-            }
+
+             try:
+                 ret = target(*args, **kwargs)
+             except exception as e:
++                elapsed = timedelta.total_seconds(datetime.datetime.now() - start)
++                details = {
++                    "target": target,
++                    "args": args,
++                    "kwargs": kwargs,
++                    "tries": tries,
++                    "elapsed": elapsed,
++                }
+                 max_tries_exceeded = (tries == max_tries_value)
+                 max_time_exceeded = (max_time_value is not None and
+                                      elapsed &gt;= max_time_value)</code></pre>
+</div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-07 11:35:01 +0100
+Last updated 2025-07-01 16:28:42 UTC
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
