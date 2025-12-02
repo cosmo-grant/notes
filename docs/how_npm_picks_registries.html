@@ -612,9 +612,9 @@ Good luck.</p>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_experiment">Experiment</h3>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">% mkdir test_npm_registry_lookup &amp;&amp; cd test_npm_registry_lookup
+<pre>% mkdir test_npm_registry_lookup &amp;&amp; cd test_npm_registry_lookup
 % npm init -y
 % npm config set 'registry=https://project-registry.com' --location=project
 % npm config set '@foo:registry=https://user-registry.com'
@@ -626,7 +626,7 @@ registry=https://project-registry.com
 npm error network request to https://user-registry.com/@foo%2fbar failed
 % # the point is that it looked up user-registry!
 % # don't forget to clean up
-% cd .. &amp;&amp; rm -rf test_npm_registry_lookup &amp;&amp; npm config delete '@foo:registry'</code></pre>
+% cd .. &amp;&amp; rm -rf test_npm_registry_lookup &amp;&amp; npm config delete '@foo:registry'</pre>
 </div>
 </div>
 </div>
@@ -691,11 +691,6 @@ npm error network request to https://user-registry.com/@foo%2fbar failed
 </div>
 </div>
 </div>
-</div>
-</div>
-<div id="footer">
-<div id="footer-text">
-Last updated 2025-03-17 16:26:29 UTC
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
