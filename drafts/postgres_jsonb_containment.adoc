@@ -1,0 +1,76 @@
+= postgres jsonb containment
+
+Given a table like
+
+[listing]
+----
+> select * from tbl;
++----+--------------------------------------+
+| id | arr                                  |
+|----+--------------------------------------|
+| 1  | [{"foo": 0}]                         |
+| 2  | [{"bar": 0, "baz": 0, "foo": 0}]     |
+| 3  | [{"bar": 0}, {"foo": 0}, {"baz": 0}] |
+| 4  | [{"foo": 1}]                         |
+| 5  | [{"bar": {"foo": 0}}]                |
++----+--------------------------------------+
+----
+
+how to get the rows where `arr` has an item with `"foo": 0` at its top level?
+
+You can't do something like:
+
+[listing]
+----
+> select id from tbl where
+    (arr -> 0 -> 'foo')::int = 0
+    or (arr -> 1 -> 'foo')::int = 0
+    or (arr -> 2 -> 'foo')::int = 0;
+----
+
+because some of the arrays might have many items and because it looks silly.
+
+It's easy in postgres:
+
+[listing]
+----
+> select id from tbl where arr @> '[{"foo": 0}]';
++----+
+| id |
+|----|
+| 1  |
+| 2  |
+| 3  |
++----+
+----
+
+From the https://www.postgresql.org/docs/current/datatype-json.html#JSON-CONTAINMENT[docs]:
+
+[quote]
+____
+Testing *containment* is an important capability of `jsonb`.
+...
+
+The general principle is that the contained object must match the containing object as to structure and data contents,
+possibly after discarding some non-matching array elements or object key/value pairs from the containing object.
+But remember that the order of array elements is not significant when doing a containment match,
+and duplicate array elements are effectively considered only once.
+____
+
+And if your filter is more complicated -- say, `arr` has an item with top-level `"foo": 0` _and_ top-level `"baz"` -- you can do something like:
+
+[listing]
+----
+> select id from tbl where exists (
+   select 1
+   from jsonb_array_elements(arr) as elem
+   where
+     (elem -> 'foo')::int = 0
+     and elem ? 'baz'
+ );
++----+
+| id |
+|----|
+| 2  |
++----+
+----

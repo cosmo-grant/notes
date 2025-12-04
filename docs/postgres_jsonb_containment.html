@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>Notes</title>
+<title>postgres jsonb containment</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -433,35 +433,105 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>postgres jsonb containment</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_notes">Notes</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><a href="how_npm_picks_registries.html">how npm picks registries</a></p>
-</li>
-<li>
-<p><a href="how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
-</li>
-<li>
-<p><a href="with_values_select.html">with values select</a></p>
-</li>
-<li>
-<p><a href="postgres_jsonb_containment.html">postgres jsonb containment</a></p>
-</li>
-<li>
-<p><a href="backoff_max_time.html">backoff max time</a></p>
-</li>
-</ul>
+<div class="paragraph">
+<p>Given a table like</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from tbl;
++----+--------------------------------------+
+| id | arr                                  |
+|----+--------------------------------------|
+| 1  | [{"foo": 0}]                         |
+| 2  | [{"bar": 0, "baz": 0, "foo": 0}]     |
+| 3  | [{"bar": 0}, {"foo": 0}, {"baz": 0}] |
+| 4  | [{"foo": 1}]                         |
+| 5  | [{"bar": {"foo": 0}}]                |
++----+--------------------------------------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>how to get the rows where <code>arr</code> has an item with <code>"foo": 0</code> at its top level?</p>
+</div>
+<div class="paragraph">
+<p>You can&#8217;t do something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select id from tbl where
+    (arr -&gt; 0 -&gt; 'foo')::int = 0
+    or (arr -&gt; 1 -&gt; 'foo')::int = 0
+    or (arr -&gt; 2 -&gt; 'foo')::int = 0;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>because some of the arrays might have many items and because it looks silly.</p>
+</div>
+<div class="paragraph">
+<p>It&#8217;s easy in postgres:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select id from tbl where arr @&gt; '[{"foo": 0}]';
++----+
+| id |
+|----|
+| 1  |
+| 2  |
+| 3  |
++----+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the <a href="https://www.postgresql.org/docs/current/datatype-json.html#JSON-CONTAINMENT">docs</a>:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Testing <strong>containment</strong> is an important capability of <code>jsonb</code>.
+&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>The general principle is that the contained object must match the containing object as to structure and data contents,
+possibly after discarding some non-matching array elements or object key/value pairs from the containing object.
+But remember that the order of array elements is not significant when doing a containment match,
+and duplicate array elements are effectively considered only once.</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>And if your filter is more complicated&#8201;&#8212;&#8201;say, <code>arr</code> has an item with top-level <code>"foo": 0</code> <em>and</em> top-level <code>"baz"</code>&#8201;&#8212;&#8201;you can do something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select id from tbl where exists (
+   select 1
+   from jsonb_array_elements(arr) as elem
+   where
+     (elem -&gt; 'foo')::int = 0
+     and elem ? 'baz'
+ );
++----+
+| id |
+|----|
+| 2  |
++----+</pre>
 </div>
 </div>
 </div>
-</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>
