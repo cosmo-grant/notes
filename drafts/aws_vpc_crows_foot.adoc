@@ -1,0 +1,13 @@
+= aws vpc crow's foot
+
+As best I can tell from the docs and some experiments:
+
+image::./images/aws_vpc_crows_foot.png[]
+
+That is:
+
+* an instance has 1 or more ENIs
+* an ENI has 0 or 1 instances
+* a security group has 0 or more ENIs
+* a subnet has exactly 1 route table
+* and so on
