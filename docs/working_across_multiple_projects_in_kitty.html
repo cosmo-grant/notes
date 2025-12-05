@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>Notes</title>
+<title>Working across multiple projects with kitty</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -433,41 +433,127 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>Working across multiple projects with kitty</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_notes">Notes</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><a href="how_npm_picks_registries.html">how npm picks registries</a></p>
-</li>
-<li>
-<p><a href="how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
-</li>
-<li>
-<p><a href="with_values_select.html">with values select</a></p>
-</li>
-<li>
-<p><a href="working_across_multiple_projects_in_kitty.html">working across multiple projects in kitty</a></p>
-</li>
-<li>
-<p><a href="postgres_jsonb_containment.html">postgres jsonb containment</a></p>
-</li>
-<li>
-<p><a href="aws_vpc_crows_foot.html">aws vpc crows foot</a></p>
-</li>
-<li>
-<p><a href="backoff_max_time.html">backoff max time</a></p>
-</li>
-</ul>
+<div class="paragraph">
+<p>I use neovim in kitty.
+I often need to work across multiple projects.
+I used to just open new os windows, kitty tabs, or kitty windows ad hoc.
+No good:
+hard to find things,
+often in the wrong directory,
+often the wrong environment variables,
+clashing neovim instances,
+and so on.</p>
+</div>
+<div class="paragraph">
+<p>There must be a better way!</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s what I&#8217;ve settled on.</p>
+</div>
+<div class="paragraph">
+<p>I use one os window per project.
+I open a new os window via, say, <code>c payments</code>.
+That calls</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-zsh hljs" data-lang="zsh">c () {
+    zi "$1" || return
+    kitty @ launch --type os-window --cwd current --os-window-title $(sed "s;$HOME/;;" &lt;&lt;&lt; "$PWD") /bin/zsh
+    z - &gt;/dev/null
+}</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>defined in my <code>functions.zsh</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>zi</code> is zoxide&#8217;s interactive <code>cd</code>,
+so I get a menu like</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/zi.png" alt="zi">
 </div>
 </div>
+<div class="paragraph">
+<p>I select my target project via fzf and hit enter.
+(The <code>|| return</code> is so that I can safely bail by hitting escape instead.)</p>
+</div>
+<div class="paragraph">
+<p>kitty then launches zsh in a new os window.
+The working directory is the selected project
+(<code>--cwd current</code>).
+So is the window&#8217;s title, but with the pointless <code>/Users/cosmo.grant</code> prefix removed
+(the <code>sed</code>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/c_function.png" alt="c function">
+</div>
+</div>
+<div class="paragraph">
+<p>And I&#8217;m off to the races.</p>
+</div>
+<div class="paragraph">
+<p>(Implementation detail:
+<code>zi</code> changes the working directory of the shell where I run <code>c</code>.
+That&#8217;s so <code>--cwd current</code> makes the new os window open at the selected project.
+<code>z - &gt;/dev/null</code> then quietly changes back to whatever it was before.)</p>
+</div>
+<div class="paragraph">
+<p>In addition, in my <code>kitty.conf</code> I have:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">map kitty_mod+enter new_window_with_cwd
+map kitty_mod+t new_tab_with_cwd</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>so my working directory remains the project root when I open more kitty windows and tabs, and also</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">enabled_layouts tall:bias=70;full_size=1;mirrored=false,all</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>so that by default I keep a big window (<code>bias=70</code>) on the left.</p>
+</div>
+<div class="paragraph">
+<p>My setup often ends up something like:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/window_setup.png" alt="window setup">
+</div>
+</div>
+<div class="paragraph">
+<p>nvim in the big window, and two shells alongside.</p>
+</div>
+<div class="paragraph">
+<p>To switch between projects,
+I cycle through the os windows using <span class="keyseq"><kbd>{commandkey}</kbd>+<kbd>`</kbd></span>,
+looking at the window titles.
+It would be nicer to select a window using fzf,
+but I normally only have a few windows open,
+so cycling is nice enough.</p>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>
