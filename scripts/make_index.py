@@ -25,7 +25,7 @@ def main():
     env = Environment(loader=FileSystemLoader("templates/"))
     index_template = env.get_template("index.adoc.jinja")
 
-    notes = [note for note in target.iterdir() if note.name != "index.html"]
+    notes = [note for note in target.iterdir() if note.name not in ("index.html", "images")]
     rendered_adoc = index_template.render(
         notes=[(note.name, get_display_name(note)) for note in notes]
     )

@@ -32,11 +32,11 @@ This is bad: you see the unread email but the counter still says 0.
 
 A picture is clearer:
 
-image::../images/transaction_isolation_levels-dirty_read_concrete.jpg[]
+image::./images/transaction_isolation_levels-dirty_read_concrete.jpg[]
 
 Generically:
 
-image::../images/transaction_isolation_levels-dirty_read_generic.jpg[]
+image::./images/transaction_isolation_levels-dirty_read_generic.jpg[]
 
 This is a _dirty read_: one transaction's read sees another transaction's uncommitted write.
 
@@ -44,19 +44,19 @@ This is a _dirty read_: one transaction's read sees another transaction's uncomm
 
 Another example:
 
-image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
 This is bad: bo buys it but jo gets it.
 
 Generically:
 
-image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
 This is a _dirty write_: one transaction's write clobbers another's uncommitted write.
 
 === Lost update
 
-image::../images/transaction_isolation_levels-lost_update_concrete.jpg[]
+image::./images/transaction_isolation_levels-lost_update_concrete.jpg[]
 
 This is not a dirty write.
 But it's still bad.
@@ -64,13 +64,13 @@ Two applications (represented by the orange and green text) tried to increment `
 
 Generically:
 
-image::../images/transaction_isolation_levels-lost_update_generic.jpg[]
+image::./images/transaction_isolation_levels-lost_update_generic.jpg[]
 
 This is a _lost update_: two transactions read an object, applications compute new values for it, and the transactions write and commit in turn.
 
 === Write skew
 
-image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
 This is bad:
 the orange transaction confirms it's safe to take off your belt, and does so;
@@ -79,19 +79,19 @@ then your trousers fall down.
 
 Generically:
 
-image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
 This is known as _write skew_: read-write straddles write.
 
 === Read skew
 
-image::../images/transaction_isolation_levels-dirty_write_concrete.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_concrete.jpg[]
 
 This is bad: the orange transaction sees current's debit but not saving's credit.
 
 Generically:
 
-image::../images/transaction_isolation_levels-dirty_write_generic.jpg[]
+image::./images/transaction_isolation_levels-dirty_write_generic.jpg[]
 
 This is known as _read skew_: reads straddle writes.
 

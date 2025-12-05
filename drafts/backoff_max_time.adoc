@@ -75,7 +75,7 @@ just before the first attempt the elapsed time is zero seconds, so `backoff` dec
 then just before the second attempt the elapsed time is five seconds, so `backoff` decides it will back off for one second if an exception is raised;
 then just before the third attempt the elapsed time is eight seconds, so `backoff` decides it will re-raise an exception.
 
-image::../images/backoff_max_time.png[]
+image::./images/backoff_max_time.png[]
 
 I find this design odd.
 Why _calculate_ the elapsed time before calling the target function, but _use_ it after?

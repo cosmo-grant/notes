@@ -10,5 +10,6 @@ preview:
 
 publish:
 	asciidoctor --destination-dir docs/ --attribute source-highlighter=highlightjs --attribute highlightjs-theme=monokai --attribute nofooter drafts/*.adoc
+	rsync --recursive preview/images/ docs/images
 	uv run scripts/make_index.py docs
 	echo "Re-create the index if you modify docs!"
