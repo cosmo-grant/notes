@@ -1,0 +1,134 @@
+= sql joins
+
+I keep the `join` variants straight by remembering these tables
+
+[listing]
+----
+> select * from lefty;
++---+---+
+| k | v |
+|---+---|
+| 1 | a |
+| 2 | b |
+| 2 | c |
+| 3 | d |
++---+---+
+
+> select * from righty;
++---+---+
+| k | v |
+|---+---|
+| 1 | e |
+| 2 | f |
+| 2 | g |
+| 4 | h |
++---+---+
+----
+
+and asking myself how many rows the join table has.
+
+A join table row is a lefty row _l_ or null row concatenated to a righty row _r_ or null row.
+The question is: which rows get concatenated?
+
+A *cross join* concatenates all _l-r_.
+So, *16*.
+
+[listing]
+----
+> select * from lefty cross join righty;
++---+---+---+---+
+| k | v | k | v |
+|---+---+---+---|
+| 1 | a | 1 | e |
+| 1 | a | 2 | f |
+| 1 | a | 2 | g |
+| 1 | a | 4 | h |
+| 2 | b | 1 | e |
+| 2 | b | 2 | f |
+| 2 | b | 2 | g |
+| 2 | b | 4 | h |
+| 2 | c | 1 | e |
+| 2 | c | 2 | f |
+| 2 | c | 2 | g |
+| 2 | c | 4 | h |
+| 3 | d | 1 | e |
+| 3 | d | 2 | f |
+| 3 | d | 2 | g |
+| 3 | d | 4 | h |
++---+---+---+---+
+----
+
+An *inner join* concatenates matching _l-r_.
+So, *5*.
+
+[listing]
+----
+> select * from lefty inner join righty on lefty.k = righty.k;
++---+---+---+---+
+| k | v | k | v |
+|---+---+---+---|
+| 1 | a | 1 | e |
+| 2 | b | 2 | f |
+| 2 | b | 2 | g |
+| 2 | c | 2 | f |
+| 2 | c | 2 | g |
++---+---+---+---+
+----
+
+A *left join* concatenates matching _l-r_, plus _l-null_ for unmatched _l_.
+So, *6*.
+
+[listing]
+----
+> select * from lefty left join righty on lefty.k = righty.k;
++---+---+--------+--------+
+| k | v | k      | v      |
+|---+---+--------+--------|
+| 1 | a | 1      | e      |
+| 2 | b | 2      | f      |
+| 2 | b | 2      | g      |
+| 2 | c | 2      | f      |
+| 2 | c | 2      | g      |
+| 3 | d | <null> | <null> |
++---+---+--------+--------+
+----
+
+A *right join* concatenates matching _l-r_, plus _null-r_ for unmatched _r_.
+So, *6*.
+
+[listing]
+----
+> select * from lefty right join righty on lefty.k = righty.k;
++--------+--------+---+---+
+| k      | v      | k | v |
+|--------+--------+---+---|
+| 1      | a      | 1 | e |
+| 2      | b      | 2 | f |
+| 2      | c      | 2 | f |
+| 2      | b      | 2 | g |
+| 2      | c      | 2 | g |
+| <null> | <null> | 4 | h |
++--------+--------+---+---+
+----
+
+A *full join* concatenates matching _l-r_, plus _l-null_ for unmatched _l_ and _null-r_ for unmatched _r_.
+So, *7*.
+
+[listing]
+----
+> select * from lefty full join righty on lefty.k = righty.k;
++--------+--------+--------+--------+
+| k      | v      | k      | v      |
+|--------+--------+--------+--------|
+| 1      | a      | 1      | e      |
+| 2      | b      | 2      | f      |
+| 2      | b      | 2      | g      |
+| 2      | c      | 2      | f      |
+| 2      | c      | 2      | g      |
+| 3      | d      | <null> | <null> |
+| <null> | <null> | 4      | h      |
++--------+--------+--------+--------+
+----
+
+It's no different if `lefty` or `righty` contained a `null` `k`.
+Just remember that `l` and `r` don't match when either's `k` is `null`.

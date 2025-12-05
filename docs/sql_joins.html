@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>Notes</title>
+<title>sql joins</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -433,44 +433,162 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>sql joins</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_notes">Notes</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><a href="how_npm_picks_registries.html">how npm picks registries</a></p>
-</li>
-<li>
-<p><a href="sql_joins.html">sql joins</a></p>
-</li>
-<li>
-<p><a href="how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
-</li>
-<li>
-<p><a href="with_values_select.html">with values select</a></p>
-</li>
-<li>
-<p><a href="working_across_multiple_projects_in_kitty.html">working across multiple projects in kitty</a></p>
-</li>
-<li>
-<p><a href="postgres_jsonb_containment.html">postgres jsonb containment</a></p>
-</li>
-<li>
-<p><a href="aws_vpc_crows_foot.html">aws vpc crows foot</a></p>
-</li>
-<li>
-<p><a href="backoff_max_time.html">backoff max time</a></p>
-</li>
-</ul>
+<div class="paragraph">
+<p>I keep the <code>join</code> variants straight by remembering these tables</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty;
++---+---+
+| k | v |
+|---+---|
+| 1 | a |
+| 2 | b |
+| 2 | c |
+| 3 | d |
++---+---+
+
+&gt; select * from righty;
++---+---+
+| k | v |
+|---+---|
+| 1 | e |
+| 2 | f |
+| 2 | g |
+| 4 | h |
++---+---+</pre>
 </div>
 </div>
+<div class="paragraph">
+<p>and asking myself how many rows the join table has.</p>
+</div>
+<div class="paragraph">
+<p>A join table row is a lefty row <em>l</em> or null row concatenated to a righty row <em>r</em> or null row.
+The question is: which rows get concatenated?</p>
+</div>
+<div class="paragraph">
+<p>A <strong>cross join</strong> concatenates all <em>l-r</em>.
+So, <strong>16</strong>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty cross join righty;
++---+---+---+---+
+| k | v | k | v |
+|---+---+---+---|
+| 1 | a | 1 | e |
+| 1 | a | 2 | f |
+| 1 | a | 2 | g |
+| 1 | a | 4 | h |
+| 2 | b | 1 | e |
+| 2 | b | 2 | f |
+| 2 | b | 2 | g |
+| 2 | b | 4 | h |
+| 2 | c | 1 | e |
+| 2 | c | 2 | f |
+| 2 | c | 2 | g |
+| 2 | c | 4 | h |
+| 3 | d | 1 | e |
+| 3 | d | 2 | f |
+| 3 | d | 2 | g |
+| 3 | d | 4 | h |
++---+---+---+---+</pre>
 </div>
 </div>
+<div class="paragraph">
+<p>An <strong>inner join</strong> concatenates matching <em>l-r</em>.
+So, <strong>5</strong>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty inner join righty on lefty.k = righty.k;
++---+---+---+---+
+| k | v | k | v |
+|---+---+---+---|
+| 1 | a | 1 | e |
+| 2 | b | 2 | f |
+| 2 | b | 2 | g |
+| 2 | c | 2 | f |
+| 2 | c | 2 | g |
++---+---+---+---+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <strong>left join</strong> concatenates matching <em>l-r</em>, plus <em>l-null</em> for unmatched <em>l</em>.
+So, <strong>6</strong>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty left join righty on lefty.k = righty.k;
++---+---+--------+--------+
+| k | v | k      | v      |
+|---+---+--------+--------|
+| 1 | a | 1      | e      |
+| 2 | b | 2      | f      |
+| 2 | b | 2      | g      |
+| 2 | c | 2      | f      |
+| 2 | c | 2      | g      |
+| 3 | d | &lt;null&gt; | &lt;null&gt; |
++---+---+--------+--------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <strong>right join</strong> concatenates matching <em>l-r</em>, plus <em>null-r</em> for unmatched <em>r</em>.
+So, <strong>6</strong>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty right join righty on lefty.k = righty.k;
++--------+--------+---+---+
+| k      | v      | k | v |
+|--------+--------+---+---|
+| 1      | a      | 1 | e |
+| 2      | b      | 2 | f |
+| 2      | c      | 2 | f |
+| 2      | b      | 2 | g |
+| 2      | c      | 2 | g |
+| &lt;null&gt; | &lt;null&gt; | 4 | h |
++--------+--------+---+---+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <strong>full join</strong> concatenates matching <em>l-r</em>, plus <em>l-null</em> for unmatched <em>l</em> and <em>null-r</em> for unmatched <em>r</em>.
+So, <strong>7</strong>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&gt; select * from lefty full join righty on lefty.k = righty.k;
++--------+--------+--------+--------+
+| k      | v      | k      | v      |
+|--------+--------+--------+--------|
+| 1      | a      | 1      | e      |
+| 2      | b      | 2      | f      |
+| 2      | b      | 2      | g      |
+| 2      | c      | 2      | f      |
+| 2      | c      | 2      | g      |
+| 3      | d      | &lt;null&gt; | &lt;null&gt; |
+| &lt;null&gt; | &lt;null&gt; | 4      | h      |
++--------+--------+--------+--------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s no different if <code>lefty</code> or <code>righty</code> contained a <code>null</code> <code>k</code>.
+Just remember that <code>l</code> and <code>r</code> don&#8217;t match when either&#8217;s <code>k</code> is <code>null</code>.</p>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>
