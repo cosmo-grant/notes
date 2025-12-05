@@ -1,5 +1,6 @@
 = Working across multiple projects with kitty
 :experimental:
+:commandkey: &#8984;
 
 I use neovim in kitty.
 I often need to work across multiple projects.
