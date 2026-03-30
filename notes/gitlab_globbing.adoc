@@ -1,0 +1,319 @@
+= Gitlab globbing
+
+Recall
+
+```yaml
+.python-job-base:
+  image: $GITLAB_ECR_URL/debian-python:3.12
+  cache:
+    key:
+      files:
+        - "**/poetry.lock"
+    paths:
+      - "**/.venv"
+  artifacts:
+    paths:
+      - "**/.venv"
+```
+
+
+Are we sure these `**` patterns work as we want?
+
+According to the docs, for the `cache:paths` and `artifacts:paths` patterns "you can use wildcards that use `glob` and `doublestar.Glob` patterns."
+
+How do `doublestar.Glob` patterns work? Its [docs](https://pkg.go.dev/github.com/bmatcuk/doublestar#section-readme) say "Bash's globstar is doublestar's inspiration and, as such, works similarly". So let's check what `**/.venv` matches in Bash:
+
+```
+$ pwd
+/Users/cosmo.grant/git/payments-service
+$ shopt -s globstar  # enable globstar expansion
+$ echo **/.venv
+.venv
+```
+
+We might as well also check the Go package directly:
+
+```go
+package main
+
+import "github.com/bmatcuk/doublestar"
+import "fmt"
+
+func main() {
+	matches, _ := doublestar.Glob("**/.venv")
+	fmt.Println("Matches found:", matches)
+}
+```
+
+```
+% pwd
+/Users/cosmo.grant/git/payments-service
+
+% go run main
+Matches found: [.venv]
+```
+
+So that's good.
+
+What about the `cache:key:files` pattern? The docs here are not explicit, as they are for `cache:paths` and `artifacts:paths`. But a bit of digging turns up [this gitlab issue](https://gitlab.com/gitlab-org/gitlab/-/issues/301161#note_2436729449). Key quote:
+
+> That does man however that while **/package.json will match that file in any subfolder, it will not match that file in the root directory of the repo.
+
+Aha! So `cache:key:files` works differently: it will not match `poetry.lock` at the top-level!
+
+Let's confirm. The gitlab comment links to gitlab's implementation, which seems to involve doing `git log --max-count=1 -- my_cool_pattern`, and basing the cache key on the resulting commit.
+
+If we try that ourselves:
+
+```
+% git log --max-count=1 -- '**/poetry.lock'
+commit bf0f904d2a674fa96ae287c809c49e4b8dedbc4b
+Author: Mikael Giacomini <mikael.giacomini@postcodelottery.co.uk>
+Date:   Wed Apr 3 11:41:29 2024 +0100
+
+    doc: merge documentation and cleanup files
+```
+
+So, confirmed: `cache:key:files:"**/poetry.lock"` does not work as we want. Gitlab passes the pattern to git, and git's pathspecs don't work like Bash's.
+
+One day, the unit test job in `foobar` project's branch pipelines started consistently failing,
+always because of the same test: `test_xyz`.
+The test hadn't been touched in over a year
+and still passed locally and on `main`.
+Odd!
+
+These are my notes as I debugged,
+but tidied up, pruned, redacted and highlighting things I learned.
+
+== Compare local and ci
+
+The ci job's log includes a stack trace for the failing `test_xyz`.
+We can `pytest -k test_xyz --trace` locally, where the test passes, to compare.
+I spot a difference:
+the source of a function from `package_xyz` is different locally than in ci.
+
+Locally I'm using version 2.43.1 of `package_xyz`.
+That's the version specified in the lockfile.
+But what version is the ci job using?
+I'll make a new branch and prepend `poetry show` to the job script.
+Huh, `poetry show` outputs 2.43.1 too.
+I'll try inspecting the venv directly instead by prepending `ls .venv/lib/python3.12/site-packages/`.
+That output includes:
+
+[source,text]
+----
+package_xyz
+package_xyz-2.43.1.dist-info
+package_xyz-3.13.0.dist-info
+----
+
+Ok, progress: the `.venv` in the ci job includes files from _two_ versions!
+
+Which version is the job actually _using_?
+I.e. which files are in the `package_xyz` directory in the job's `.venv`?
+
+The unit test job saves the `.venv` as an artifact.
+So I'll download it and poke around.
+Eyeballing it is getting me nowhere,
+so I'll compare it directly to known versions.
+I'll get a checksum of the `package_xyz` directory in my local `.venv` and the downloaded `.venv`.
+
+`md5` takes files, not directories,
+but we can work around that by getting checksums of the files,
+and then checksum the checksums.
+
+[source,text]
+----
+% find -s .venv/lib/python3.12/site-packages/package_xyz -name '*.py' -exec md5 --quiet {} \; | md5  # local, 2.43.1
+a6fed739ca58749c86d0ad54c62f7c28
+
+% find -s ci_venv/lib/python3.12/site-packages/package_xyz -name '*.py' -exec md5 --quiet {} \; | md5  # ci
+23ee67d284092c0531f3c927535be491
+----
+
+(`-s` to sort the output.
+`-name '*.py'` in case of `__pycache__` files or similar.
+`--quiet` so just the checksum is output, not the filename too.)
+
+Now let's compare to clean installs in fresh venvs of 2.43.1 and 3.13.0:
+
+[source,text]
+----
+% find -s .venv/lib/python3.12/site-packages/package_xyz -name '*.py' -exec md5 --quiet {} \; | md5  # 2.43.1
+a6fed739ca58749c86d0ad54c62f7c28
+
+% find -s .venv/lib/python3.12/site-packages/package_xyz -name '*.py' -exec md5 --quiet {} \; | md5  # 3.13.0
+a8cf2f5b03d31ba40337d8d8798655eb
+----
+
+So my local package is indeed 2.43.1,
+and the ci job's is neither 2.43.1 nor 3.13.0.
+What _is_ the ci job's then?
+Maybe a merging of 3.13.0 into 2.43.1?
+Let's test:
+
+[source,text]
+----
+% rsync -vr package_xyz_3.13.0/ package_xyz_2.43.1  # overwrites same-named files, leaves others untouched
+% find -s package_xyz_2.43.1 -name '*.py' -exec md5 --quiet {} \; | md5
+23ee67d284092c0531f3c927535be491
+----
+
+Yes!
+
+So somehow the ci job's `.venv` has been corrupted
+so `package_xyz` is an `rsync`-style merging of 3.13.0 (origin as yet unknown) into the intended 2.43.1.
+
+== How did the venv get corrupted?
+
+Let's look at the ci config.
+
+Because of heavy use of `extends`, `includes`, partial over-riding, global defaults, etc.
+it's not trivial to work out what the effective ci config is.
+But one thing jumps out:
+we seem to both cache the `.venv` _and_ save it as an artifact.
+Why both?
+And how exactly do caching and artifacts work anyway?
+
+Let's dig into the docs.
+Key points:
+
+  1. "Use the `cache:key` keyword to give each cache a unique identifying key. All jobs that use the same cache key use the same cache, including in different pipelines."
+  2. "Use the `cache:key:files` keyword to generate a new key when files matching either of the defined paths or patterns change. `cache:key:files` lets you reuse some caches, and rebuild them less often, which speeds up subsequent pipeline runs."
+  3. "By default, cache is not shared between protected and unprotected branches."
+  4. "The cache key is a SHA computed from the most recent commits that changed each listed file."
+  5. "By default, the job downloads the cache when the job starts, and uploads changes to the cache when the job ends. This caching style is the `pull-push` policy (default)."
+  6. "To set a job to only download the cache when the job starts, but never upload changes when the job finishes, use `cache:policy:pull`."
+  7. "Use `artifacts` to specify which files to save as job artifacts."
+  8. "When using the `needs` keyword, jobs can only download artifacts from the jobs defined in the needs configuration. Job artifacts are only collected for successful jobs by default, and artifacts are restored after caches."
+
+_"Artifacts are restored after caches."_
+We both cache and artifact the `.venv`.
+A [gitlab mr](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/577) confirms that artifacts are merged with the cache `rsync`-style,
+i.e. files in artifacts overwrite same-named files in the cache, but leave others alone.
+So we're surely on the right track.
+
+Let's try (as experiment, not fix) changing the `test-unit` job not to install artifacts, but just use the cache.
+We know the `.venv` artifact is bad (because we downloaded it). But maybe the cache is ok?
+
+https://gitlab.com/plg-tech/plg/projects/payments/payments-service/-/pipelines/1832202829
+
+Nope! The log shows that the is cache downloaded but no artifacts are downloaded, yet the `.venv` is still corrupt
+
+```
+Downloading cache from https://plg-pr-gitlab-runners-cache.s3.dualstack.eu-central-1.amazonaws.com/project/54514191/0_%2A%2A/poetry-7fb1<masked>ea3b-1-non_protected  ETag="49775a77507d8bebab4d9ef32450dd28"
+
+$ ls .venv/lib/python3.12/site-packages/
+package_xyz
+package_xyz-2.43.1.dist-info
+package_xyz-3.13.0.dist-info
+```
+
+and we get the same unit test failure.
+
+**So: the cache itself is corrupt.**
+
+### Why powertools?
+
+What's special about `package_xyz`? How did _it_ get involved?
+
+Aha! It must be renovate: https://gitlab.com/plg-tech/plg/projects/payments/payments-service/-/merge_requests/115.
+
+That mr bumps powertools to 3.13.0, with a pipeline running the day before we noticed this bug. So it's surely involved.
+
+But this mr has been open for months, with loads of pipelines running. The one from 2025-05-20 (job 10109462929) fails at `test-unit` with the same error we saw above. Same two days before: 10096186535. But a week ago the `test-unit` job failed more drastically: 1005065897. That drastic failure is expected, because powertools v2 to v3 has breaking changes, and is what I get when using powertools v3 locally.
+
+**So: sometime between 2025-05-14 and 2025-05-20, this mr started using a mix of v2 and v3.**
+
+That's how powertools enters the story.
+
+But presumably it's nothing specific to powertools, nor to renovate mrs, and we might get this same issue with other packages, but just not have noticed yet.
+
+### Fixing the cache (temporarily)
+
+If we make a dummy change to the `poetry.lock`, so the cache key changes, we should use a new, non-corrupt cache. Let's try it. I'll add a whitespace change to my branch, and re-run the pipeline.
+
+```
+Downloading cache from https://plg-pr-gitlab-runners-cache.s3.dualstack.eu-central-1.amazonaws.com/project/54514191/0_%2A%2A/poetry-7fb1<masked>ea3b-1-non_protected  ETag="d30826e9984127a970df0b97da3325ee"
+
+$ ls .venv/lib/python3.12/site-packages/
+package_xyz
+package_xyz-2.43.1.dist-info
+package_xyz-3.13.0.dist-info
+```
+
+**We still download a corrupt cache!** But how?!
+
+I guess the `poetry-7fb1...` is the cache key, and that's the same as we've seen above, so my `poetry.lock` change did not bust the cache.
+
+Let's try a more forceful approach: temporarily prepending `rm -rf .venv` to the `install-python` job. So the job will download the cache, then `rm -rf` it, recreate the `.venv` from scratch, and cache it.
+
+Now the `test-unit` job passes!
+
+Re-running a pipeline on a different branch also passes.
+
+Many questions remain unanswered: Why didn't my `poetry.lock` bust the cache? How did the cache get corrupted in the first place? But anyway forcibly clearing and re-creating the cache seems to have fixed the problem, so let's move on and only investigate further if...
+
+### ...the cache is corrupted again
+
+https://gitlab.com/plg-tech/plg/projects/payments/payments-service/-/jobs/10154538594
+
+The details all look as before.
+
+### Which job corrupted the cache?
+
+Let's see if we can tell _which_ job corrupted the cache.
+
+Most python jobs (e.g. any which extend `.python-job-base-dependents`, at least if they don't override stuff...), have `cache:policy:pull`, so can be ruled out. Which jobs can _push_ to the cache? `install-python`, certainly. And clicking around job logs reveals another: `poetry-export`!
+
+e.g. https://gitlab.com/plg-tech/plg/projects/payments/payments-service/-/jobs/10154538613
+
+```
+Creating cache 0_**/poetry-7fb1<masked>ea3b-1-non_protected...
+**/.venv: found 18299 matching artifact files and directories
+Uploading cache.zip to https://plg-pr-gitlab-runners-cache.s3.dualstack.eu-central-1.amazonaws.com/project/54514191/0_%2A%2A/poetry-7fb1<masked>ea3b-1-non_protected
+Created cache
+```
+
+That job is configured per-repo, not in `meta-payments`. E.g. here it is in `payments-service`:
+
+```yaml
+poetry-export:
+  extends: .python-job-base
+  image: $GITLAB_ECR_URL/debian-python:3.12
+  needs:
+    - configure-codeartifact
+    - install-python
+  script:
+    - make poetry-export
+  artifacts:
+    paths:
+      - "**/requirements.txt"
+      - "**/.venv"
+```
+
+Aha! It extends `.python-job-base`, not `.python-job-base-dependents`, so it does not have `cache:policy:pull`, but will have the default `pull-push` policy.
+
+The timings also make sense. This job was introduced into `payments-service` on 2025-05-20, just before the bug first cropped up, as part of doing manual bundling instead of using the alpha `PythonFunction` construct.
+
+Progress!
+
+
+That explains why my attempted cache busting did not work. **In fact, it means our caching has never worked correctly.** Our cache key in `payments-service` won't have changed since 2024-04-03! No matter how the top-level `poetry.lock` changes, all our jobs use the same cache. And it will be similar in other repos. :(
+
+## Putting things together
+
+I'm not certain of the exact order of events, but we have all the ingredients here.
+
+Here's my best guess at how things went:
+
+  1. the [pipeline](https://gitlab.com/plg-tech/plg/projects/payments/payments-service/-/pipelines/1827813829) runs for a powertools-bumping renovate mr
+  2. its `install-python` job caches the `.venv` with 3.13.0, and also saves it as an artifact
+  3. concurrently, a non-renovate pipeline runs, and, moments after (2), _its_ `install-python` job caches the `.venv` with 2.43.1
+  4. back in the renovate pipeline, the `test-unit` job pulls the 2.43.1 cache
+  5. then it downloads the 3.13.0 artifact from its pipeline's `install-python` job, overwriting `.venv` `rsync`-style, leading to a corrupt `.venv` and the `test-unit` failure
+  1. still in that renovate pipeline, `poetry-export` runs for the first time, and the same thing happens: it pulls the 2.43.1 cache, then downloads the 3.13.0 artifact, leading to a corrupt `.venv`
+  2. but in addition, because of its `pull-push` cache policy, it caches that corrupt `.venv`
+  2. other payments-service branch pipelines then pull that corrupt `.venv` and `test-unit` fails in them too
+
+What a tangle.

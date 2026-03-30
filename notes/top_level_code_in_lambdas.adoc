@@ -1,0 +1,10 @@
+= Top-Level Code in Lambda Functions
+
+For example:
+
+
+== Pro: saves time
+
+== Con: harder to test
+
+example
