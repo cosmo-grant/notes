@@ -1,15 +1,9 @@
-.PHONY: view publish preview
+.PHONY: view publish
 
 view:
 	open "https://cosmo-grant.github.io/notes"
 
-preview:
-	asciidoctor --destination-dir preview/ --attribute source-highlighter=highlightjs --attribute highlightjs-theme=monokai --attribute nofooter drafts/*.adoc
-	uv run scripts/make_index.py preview
-	open "./preview/index.html"
-
 publish:
-	asciidoctor --destination-dir docs/ --attribute source-highlighter=highlightjs --attribute highlightjs-theme=monokai --attribute nofooter drafts/*.adoc
-	rsync --recursive preview/images/ docs/images
-	uv run scripts/make_index.py docs
-	echo "Re-create the index if you modify docs!"
+	asciidoctor --destination-dir docs/ --attribute source-highlighter=highlightjs --attribute highlightjs-theme=monokai --attribute nofooter notes/*.adoc
+	uv run scripts/make_index.py
+	open "docs/index.html"

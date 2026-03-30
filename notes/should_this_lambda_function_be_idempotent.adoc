@@ -1,0 +1,97 @@
+= Should this Lambda function be idempotent?
+
+EventBridge sends events to a Lambda function.
+The function processes an event by:
+POSTing to an api and raising an exception if 4XX or 5XX,
+then emitting another event to EventBridge,
+then returning.
+
+Should we make the function idempotent?
+That means:
+if the function processes an event ok,
+then receives the same event again,
+it immediately returns the same result without repeating the work.
+
+AWS says we should:
+
+[quote,,https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html]
+____
+Lambda event source mappings process each event at least once, and duplicate processing of records can occur.
+To avoid potential issues related to duplicate events, we strongly recommend that you make your function code idempotent.
+____
+
+But let's think through what it does and doesn't gain us.
+
+I'll consider what might happen the _second_ time an event is received,
+depending on what happened the _first_ time.
+
+== First invocation ok
+
+The function POSTed to the api and got 2XX, then emitted an event and returned.
+Then it receives the same event again.
+What happens?
+
+=== Idempotent
+
+The function immediately returns the same result.
+All good.
+
+=== Not idempotent
+
+The function POSTs again.
+The response depends on the api:
+
+1. Maybe it sees that that it's a duplicate and immediately gives the same 2XX response.
+2. Maybe it sees that it's a duplicate and immediately responds 4XX.
+3. Maybe it repeats work.
+
+In (1), the function re-emits and returns.
+A redundant POST and emission but otherwise no harm done.
+
+In (2), the function raises an exception.
+The Lambda service will re-invoke it a couple of times, then discard the event.
+Doomed invocations and noisy error metrics but otherwise no harm done.
+
+In (3), the function re-emits and returns.
+Potentially bad, e.g. double payment.
+
+== First invocation errors
+
+Maybe the POST got 4XX or 5XX.
+Maybe an exception when emitting the event.
+Anyway, the function receives the same event again.
+What happens?
+
+In this case it's irrelevant whether the function is idempotent.
+It will repeat work whether idempotent or not.
+Idempotency only kicks in if a previous invocation was successful.
+
+Besides, if the first invocation errored,
+the Lambda service itself will re-invoke the function.
+EventBridge's "at least once" delivery is by the by.
+
+The result of the function repeating work depends on how far it got the first time and what its work is.
+It might be fine (e.g. it got nowhere the first time, or the work is safely repeatable).
+It might be bad (e.g. two POSTS and a double payment).
+
+== Key points
+
+=== Idempotent != safe to retry
+
+If the function errors,
+it may be re-invoked regardless of delivery semantics,
+and may repeat work regardless of idempotency.
+Partial failures are a headache no matter what.
+
+=== Idempotent == safe to retry after success
+
+An idempotent function becomes a no-op if re-invoked after a success.
+That's typically useful when working with "at least once" delivery.
+But it's not always necessary.
+For some functions, repeating work is harmless.
+
+=== Event producers shouldn't worry about re-emitting events
+
+EventBridge has "at least once" delivery.
+So don't worry about re-emitting events.
+Consumers need to handle duplicates anyway.

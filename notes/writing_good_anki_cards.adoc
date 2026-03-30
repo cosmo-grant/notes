@@ -1,0 +1,5 @@
+= Writing good anki cards
+
+anki example: Go. An identifier is {{c2::exported}} just if {{c2::it's capitalized}} / it's name starts with an uppercase letter.
+anki example: copy values to slice2 from slice1, returning the number of elements copied
+anki example: `read into var the first line from file` versus `read the first line from file, saving it in var`

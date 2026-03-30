@@ -28,7 +28,7 @@ I keep the `join` variants straight by remembering these tables
 and asking myself how many rows the join table has.
 
 A join table row is a lefty row _l_ or null row concatenated to a righty row _r_ or null row.
-The question is: which rows get concatenated?
+The difference is: which rows get concatenated?
 
 A *cross join* concatenates all _l-r_.
 So, *16*.
@@ -132,3 +132,6 @@ So, *7*.
 
 It's no different if `lefty` or `righty` contained a `null` `k`.
 Just remember that `l` and `r` don't match when either's `k` is `null`.
+
+
+TODO: lateral join
