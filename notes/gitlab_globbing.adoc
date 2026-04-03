@@ -64,8 +64,8 @@ https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211084
 https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211424
 
 * better version of 209633
-* restored wildcard support, as in 209633
-* but also prevented a file matching itself
+* restored wildcard support and fixed wildcard matching, as in 209633
+* but also prevented a file including itself
 
 == Has my issue been fixed?
 
@@ -78,8 +78,8 @@ So `**/foo` does match `foo` at the top-level.
 
 But `cache:key:files_commit` still behaves as it did originally:
 it calls `last_commit_id_for_path(path)`,
-which is passed to Gitaly,
-which interprets it as a pathspec.
+which delegates to Gitaly,
+which interprets the path as a pathspec.
 So `**/foo` still does not match `foo` at the top-level.
 
 The bottom line: pattern interpretation is still inconsistent and confusing.
