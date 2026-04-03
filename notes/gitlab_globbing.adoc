@@ -49,7 +49,7 @@ https://gitlab.com/gitlab-org/gitlab/-/merge_requests/203233:
 
 * switched `cache:key:files` from commit hashing to content hashing
 * `cache:key:files` paths are matched literally (no wildcard support)
-* preserved the old commit hashing behaviour under a new key `cache:key:files_commit`
+* preserved the old commit hashing behaviour under a new key `cache:key:files_commits`
 
 https://gitlab.com/gitlab-org/gitlab/-/merge_requests/209633
 
@@ -76,7 +76,7 @@ I also skimmed the GitLab source.
 In `cache:key:files`, patterns are now interpreted like globs.
 So `**/foo` does match `foo` at the top-level.
 
-But `cache:key:files_commit` still behaves as it did originally:
+But `cache:key:files_commits` still behaves as it did originally:
 it calls `last_commit_id_for_path(path)`,
 which delegates to Gitaly,
 which interprets the path as a pathspec.
