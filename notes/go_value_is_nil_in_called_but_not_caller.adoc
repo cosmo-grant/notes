@@ -1,0 +1,55 @@
+= Go value is nil in called but not caller
+
+[source,go]
+----
+package main
+
+import "fmt"
+
+type Xer interface{}
+
+type S struct{}
+
+func foo() Xer {
+	var s *S
+	fmt.Println(s == nil)
+	return s
+}
+
+func main() {
+	r := foo()
+	fmt.Println(r == nil)
+}
+----
+
+outputs
+
+[source,text]
+----
+true
+false
+----
+
+Surprising (to me)!
+
+`s` compares equal to `nil`, then is returned.
+`r` is assigned to the return value.
+`r` doesn't compare equal to `nil`.
+
+What's going on?
+
+`var s *S` is declared as a pointer to a value of type `S`.
+It's not assigned a value, so Go assigns it a pointer's zero value: `nil`.
+That's why the first comparison prints `true`.
+
+``foo()``'s return type is `Xer`, an interface.
+So `s` is an interface value.
+An interface value can be thought of as a (value, concrete type) tuple.
+In this case: `(nil, *main.S)`.
+``r``'s concrete type is non-`nil`.
+That's why the second comparison prints `false`.
+
+OK, but I'm still puzzled.
+Somehow the return value, or how Go thinks of it, changes in flight from `foo()` to `main()`.
+I wonder if this illustrates something important about... interface values? types? compilers?
+I'd like to understand it better.
