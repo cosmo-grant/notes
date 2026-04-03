@@ -1,11 +1,11 @@
 = Bisimulations and the Standard Translation
 :stem:
-:toc:
 
 == Plan
 
 We’ll look at some more metatheory of propositional modal logic.
 footnote:[This is an adapted version of handout for a guest lecture I gave: Philosophy 244, MIT, October 26 2016.]
+
 Our previous work on propositional modal logic focused on _frames_.
 Today we’ll focus on _models_.
 The central new concept is that of a _bisimulation_ between two models.
@@ -25,6 +25,7 @@ Let’s say that latexmath:[(M,w)], latexmath:[(M',w')] are _modally equivalent_
 for every formula latexmath:[\phi], latexmath:[(M,w) \models \phi] iff latexmath:[(M',w') \models \phi].
 
 When are latexmath:[(M,w)], latexmath:[(M',w')] modally equivalent?
+
 Well, if there is an _isomorphism_ latexmath:[f : W \rightarrow W'] then latexmath:[(M,w)], latexmath:[(M',w')] will certainly be modally equivalent. 
 But an isomorphism is over-kill: it guarantees modal equivalence but in a heavy-handed way.
 Can we do better?
@@ -41,26 +42,23 @@ exists latexmath:[v'] such that latexmath:[R'w'v'] and latexmath:[vZv'].
 there exists latexmath:[v] such that latexmath:[vZv'] and
 latexmath:[Rwv].
 
-If there is a bisimulation between latexmath:[(M,w)] and
-latexmath:[(M',w')], we’ll write
-latexmath:[(M,w) \leftrightarroweq (M',w')], and say that latexmath:[w],
-latexmath:[w'] are _bisimilar_.
+If there is a bisimulation between latexmath:[(M,w)] and latexmath:[(M',w')],
+we’ll write latexmath:[(M,w) \leftrightarrow (M',w')], and say that latexmath:[w], latexmath:[w'] are _bisimilar_.
 
 == Bisimulations and modal equivalence
 
-If latexmath:[(M,w) \leftrightarroweq (M',w')] then
-latexmath:[(M,w) \leftrightsquigarrow (M',w')].
+*Theorem.* If latexmath:[(M,w) \leftrightarrow (M',w')] then latexmath:[(M,w) \leftrightsquigarrow (M',w')].
 
 _Proof._ We need to show that for all formulas latexmath:[\phi] and
 models latexmath:[(M,w), (M',w')], if
-latexmath:[(M,w) \leftrightarroweq (M',w')] then
+latexmath:[(M,w) \leftrightarrow (M',w')] then
 latexmath:[(M,w) \models \phi] iff latexmath:[(M',w') \models \phi]. We
 proceed by strong induction on complexity. Fix a formula
 latexmath:[\phi].
 
 _Induction Hypothesis:_ For every shorter formula latexmath:[\psi] and
 all models latexmath:[(M,w)], latexmath:[(M',w')], if
-latexmath:[(M,w) \leftrightarroweq (M',w')] then
+latexmath:[(M,w) \leftrightarrow (M',w')] then
 latexmath:[(M,w) \models \psi] iff latexmath:[(M',w') \models \psi].
 
 _Case 1:_ latexmath:[\phi] is atomic. The result follows from atomic
@@ -70,13 +68,13 @@ _Case 2:_ latexmath:[\phi] is a Boolean combination of shorter formulas.
 The result is by IH and the satisfaction definitions.
 
 _Case 3:_ latexmath:[\phi] is latexmath:[\diamond \psi]. Suppose
-latexmath:[(M,w) \leftrightarroweq (M',w')] and
+latexmath:[(M,w) \leftrightarrow (M',w')] and
 latexmath:[(M,w) \models \diamond \psi]. So there exists latexmath:[v]
 in latexmath:[M] such that latexmath:[Rwv] and
 latexmath:[(M,v) \models \psi]. Since
-latexmath:[(M,w) \leftrightarroweq (M',w')], the forth condition tells
+latexmath:[(M,w) \leftrightarrow (M',w')], the forth condition tells
 us that there exists latexmath:[v'] in latexmath:[M'] such that
-latexmath:[R'w'v'] and latexmath:[(M,v) \leftrightarroweq (M',v')]. By
+latexmath:[R'w'v'] and latexmath:[(M,v) \leftrightarrow (M',v')]. By
 IH, latexmath:[(M',v') \models \psi]. So
 latexmath:[(M',w') \models \diamond \psi]. The converse is similar. ◻
 
@@ -102,7 +100,7 @@ world in latexmath:[M] can see only finitely many worlds.
 Let latexmath:[M], latexmath:[M'] be image-finite models. For all
 latexmath:[w \in W], latexmath:[w' \in W'], if
 latexmath:[(M,w) \leftrightsquigarrow (M',w')] then
-latexmath:[(M,w) \leftrightarroweq (M',w')].
+latexmath:[(M,w) \leftrightarrow (M',w')].
 
 _Proof._ We will show that the relation of modal equivalence is itself a
 bisimulation. That is, define
