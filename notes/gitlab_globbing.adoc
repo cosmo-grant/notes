@@ -38,7 +38,7 @@ So has my issue actually been fixed?
 
 == Digging into the history
 
-June 2025:
+When I raised the issue in June 2025:
 
 * `cache:key:files` called `last_commit_id_for_path(path)`,
 which delegated to Gitaly (RPC access to Git),
@@ -47,7 +47,7 @@ which interpreted the path as a pathspec
 
 https://gitlab.com/gitlab-org/gitlab/-/merge_requests/203233:
 
-* switched `cache:key:files` from commit hashing to content hashing
+* switched `cache:key:files` from commit to content hashing
 * `cache:key:files` paths are matched literally (no wildcard support)
 * preserved the old commit hashing behaviour under a new key `cache:key:files_commits`
 
@@ -83,3 +83,5 @@ which interprets the path as a pathspec.
 So `**/foo` still does not match `foo` at the top-level.
 
 The bottom line: pattern interpretation is still inconsistent and confusing.
+
+I've raised another issue: https://gitlab.com/gitlab-org/gitlab/-/work_items/595745.

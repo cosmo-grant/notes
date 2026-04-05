@@ -1,5 +1,55 @@
 = Writing good anki cards
 
-anki example: Go. An identifier is {{c2::exported}} just if {{c2::it's capitalized}} / it's name starts with an uppercase letter.
-anki example: copy values to slice2 from slice1, returning the number of elements copied
-anki example: `read into var the first line from file` versus `read the first line from file, saving it in var`
+== Shorter!
+
+=== Example (Go)
+
+Original:
+
+====
+*Go.* An identifier is {{c1::exported}} just if {{c2::its name starts with a capital letter}}.
+====
+
+Better:
+
+====
+*Go.* An identifier is {{c1::exported}} just if {{c2::it's capitalized}}.
+====
+
+== Fit words to world
+
+=== Example (Go)
+
+Original:
+
+====
+*Effect* +
+copy values from `slice1` to `slice2`, returning the number of elements copied
+
+*How* +
+`copy(slice2, slice1)`
+====
+
+Better:
+
+====
+*Effect* +
+copy values to `slice1` from `slice2`, returning the number of elements copied
+====
+
+=== Example (Bash)
+
+====
+*Effect* +
+read the first line from `file`, saving it in `var`
+
+*How* +
+`read var file`
+====
+
+Better:
+
+====
+*Effect* +
+read into `var` the first line from `file`
+====
