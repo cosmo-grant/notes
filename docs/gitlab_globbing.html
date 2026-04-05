@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.26">
-<title>Notes</title>
+<title>GitLab globbing</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -433,62 +433,176 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>GitLab globbing</h1>
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="_notes">Notes</h2>
+<h2 id="_my_issue">My issue</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>GitLab CI used to interpret file path patterns differently in different contexts:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="with_values_select.html">with values select</a></p>
+<p>in <code>cache:paths</code> or <code>artifacts:paths</code>, like glob patterns</p>
 </li>
 <li>
-<p><a href="working_across_multiple_projects_in_kitty.html">working across multiple projects in kitty</a></p>
+<p>in <code>cache:key:files</code>, like git pathspecs</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Globs and pathspecs behave differently, e.g. for <code>**/foo</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">$ tree
+.
+├── dir
+│   └── foo
+└── foo
+
+2 directories, 2 files
+
+$ shopt -s globstar  # enable globstar expansion
+
+$ ls **/foo
+dir/foo  foo
+
+$ git ls-files '**/foo'
+dir/foo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This caught me out:
+I used a pattern like <code>**/foo</code> in <code>cache:key:files</code>, expecting it to catch <code>foo</code> files at every level, but it didn&#8217;t.</p>
+</div>
+<div class="paragraph">
+<p>I raised <a href="https://gitlab.com/gitlab-org/gitlab/-/work_items/547149">an issue</a>, suggesting the docs make this clear.
+It was closed in favour of <a href="https://gitlab.com/gitlab-org/gitlab/-/work_items/460235" class="bare">https://gitlab.com/gitlab-org/gitlab/-/work_items/460235</a>.
+But that addressed a different issue: commit hashing versus content hashing.
+So has my issue actually been fixed?</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_digging_into_the_history">Digging into the history</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When I raised the issue in June 2025:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>cache:key:files</code> called <code>last_commit_id_for_path(path)</code>,
+which delegated to Gitaly (RPC access to Git),
+which interpreted the path as a pathspec</p>
 </li>
 <li>
-<p><a href="sql_joins.html">sql joins</a></p>
+<p>wildcard support seems to be accidental</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="https://gitlab.com/gitlab-org/gitlab/-/merge_requests/203233" class="bare">https://gitlab.com/gitlab-org/gitlab/-/merge_requests/203233</a>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>switched <code>cache:key:files</code> from commit to content hashing</p>
 </li>
 <li>
-<p><a href="how_npm_picks_registries.html">how npm picks registries</a></p>
+<p><code>cache:key:files</code> paths are matched literally (no wildcard support)</p>
 </li>
 <li>
-<p><a href="writing_good_anki_cards.html">writing good anki cards</a></p>
+<p>preserved the old commit hashing behaviour under a new key <code>cache:key:files_commits</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="https://gitlab.com/gitlab-org/gitlab/-/merge_requests/209633" class="bare">https://gitlab.com/gitlab-org/gitlab/-/merge_requests/209633</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>restored wildcard support to <code>cache:key:files</code>, which broke with 203233</p>
 </li>
 <li>
-<p><a href="how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
+<p>wildcards are supported by creating regexes from user-provided globs (fiddly!)</p>
 </li>
 <li>
-<p><a href="bisimulations_and_the_standard_translation.pdf">bisimulations and the standard translation</a></p>
+<p>fixed a bug when matching wildcards, so <code>**/foo</code> does now match at top-level</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211084" class="bare">https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211084</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>reverted 209633 because it allowed a file to include itself</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211424" class="bare">https://gitlab.com/gitlab-org/gitlab/-/merge_requests/211424</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>better version of 209633</p>
 </li>
 <li>
-<p><a href="aws_vpc_crows_foot.html">aws vpc crows foot</a></p>
+<p>restored wildcard support and fixed wildcard matching, as in 209633</p>
 </li>
 <li>
-<p><a href="go_value_is_nil_in_called_but_not_caller.html">go value is nil in called but not caller</a></p>
-</li>
-<li>
-<p><a href="postgres_jsonb_containment.html">postgres jsonb containment</a></p>
-</li>
-<li>
-<p><a href="top_level_code_in_lambdas.html">top level code in lambdas</a></p>
-</li>
-<li>
-<p><a href="backoff_max_time.html">backoff max time</a></p>
-</li>
-<li>
-<p><a href="should_this_lambda_function_be_idempotent.html">should this lambda function be idempotent</a></p>
-</li>
-<li>
-<p><a href="gitlab_globbing.html">gitlab globbing</a></p>
+<p>but also prevented a file including itself</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_has_my_issue_been_fixed">Has my issue been fixed?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I tested directly (<a href="https://gitlab.com/cosmo-grant/ci-by-example/-/commits/config/cache-and-artifacts-globbing" class="bare">https://gitlab.com/cosmo-grant/ci-by-example/-/commits/config/cache-and-artifacts-globbing</a>).</p>
 </div>
+<div class="paragraph">
+<p>I also skimmed the GitLab source.</p>
+</div>
+<div class="paragraph">
+<p>In <code>cache:key:files</code>, patterns are now interpreted like globs.
+So <code>**/foo</code> does match <code>foo</code> at the top-level.</p>
+</div>
+<div class="paragraph">
+<p>But <code>cache:key:files_commits</code> still behaves as it did originally:
+it calls <code>last_commit_id_for_path(path)</code>,
+which delegates to Gitaly,
+which interprets the path as a pathspec.
+So <code>**/foo</code> still does not match <code>foo</code> at the top-level.</p>
+</div>
+<div class="paragraph">
+<p>The bottom line: pattern interpretation is still inconsistent and confusing.</p>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve raised another issue: <a href="https://gitlab.com/gitlab-org/gitlab/-/work_items/595745" class="bare">https://gitlab.com/gitlab-org/gitlab/-/work_items/595745</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>

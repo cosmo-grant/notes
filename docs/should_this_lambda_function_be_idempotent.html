@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.26">
-<title>Notes</title>
+<title>Should this Lambda function be idempotent?</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -433,62 +433,166 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>Should this Lambda function be idempotent?</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_notes">Notes</h2>
+<div id="preamble">
 <div class="sectionbody">
-<div class="ulist">
-<ul>
+<div class="paragraph">
+<p>EventBridge sends events to a Lambda function.
+The function processes an event by:
+POSTing to an api and raising an exception if 4XX or 5XX,
+then emitting another event to EventBridge,
+then returning.</p>
+</div>
+<div class="paragraph">
+<p>Should we make the function idempotent?
+That means:
+if the function processes an event ok,
+then receives the same event again,
+it immediately returns the same result without repeating the work.</p>
+</div>
+<div class="paragraph">
+<p>AWS says we should:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>Lambda event source mappings process each event at least once, and duplicate processing of records can occur.
+To avoid potential issues related to duplicate events, we strongly recommend that you make your function code idempotent.</p>
+</div>
+</blockquote>
+<div class="attribution">
+<cite>https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html</cite>
+</div>
+</div>
+<div class="paragraph">
+<p>But let&#8217;s think through what it does and doesn&#8217;t gain us.</p>
+</div>
+<div class="paragraph">
+<p>I&#8217;ll consider what might happen the <em>second</em> time an event is received,
+depending on what happened the <em>first</em> time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_first_invocation_ok">First invocation ok</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The function POSTed to the api and got 2XX, then emitted an event and returned.
+Then it receives the same event again.
+What happens?</p>
+</div>
+<div class="sect2">
+<h3 id="_idempotent">Idempotent</h3>
+<div class="paragraph">
+<p>The function immediately returns the same result.
+All good.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_not_idempotent">Not idempotent</h3>
+<div class="paragraph">
+<p>The function POSTs again.
+The response depends on the api:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p><a href="with_values_select.html">with values select</a></p>
+<p>Maybe it sees that that it&#8217;s a duplicate and immediately gives the same 2XX response.</p>
 </li>
 <li>
-<p><a href="working_across_multiple_projects_in_kitty.html">working across multiple projects in kitty</a></p>
+<p>Maybe it sees that it&#8217;s a duplicate and immediately responds 4XX.</p>
 </li>
 <li>
-<p><a href="sql_joins.html">sql joins</a></p>
+<p>Maybe it repeats work.</p>
 </li>
-<li>
-<p><a href="how_npm_picks_registries.html">how npm picks registries</a></p>
-</li>
-<li>
-<p><a href="writing_good_anki_cards.html">writing good anki cards</a></p>
-</li>
-<li>
-<p><a href="how_backoff_jitters_and_why.html">how backoff jitters and why</a></p>
-</li>
-<li>
-<p><a href="bisimulations_and_the_standard_translation.pdf">bisimulations and the standard translation</a></p>
-</li>
-<li>
-<p><a href="aws_vpc_crows_foot.html">aws vpc crows foot</a></p>
-</li>
-<li>
-<p><a href="go_value_is_nil_in_called_but_not_caller.html">go value is nil in called but not caller</a></p>
-</li>
-<li>
-<p><a href="postgres_jsonb_containment.html">postgres jsonb containment</a></p>
-</li>
-<li>
-<p><a href="top_level_code_in_lambdas.html">top level code in lambdas</a></p>
-</li>
-<li>
-<p><a href="backoff_max_time.html">backoff max time</a></p>
-</li>
-<li>
-<p><a href="should_this_lambda_function_be_idempotent.html">should this lambda function be idempotent</a></p>
-</li>
-<li>
-<p><a href="gitlab_globbing.html">gitlab globbing</a></p>
-</li>
-</ul>
+</ol>
+</div>
+<div class="paragraph">
+<p>In (1), the function re-emits and returns.
+A redundant POST and emission but otherwise no harm done.</p>
+</div>
+<div class="paragraph">
+<p>In (2), the function raises an exception.
+The Lambda service will re-invoke it a couple of times, then discard the event.
+Doomed invocations and noisy error metrics but otherwise no harm done.</p>
+</div>
+<div class="paragraph">
+<p>In (3), the function re-emits and returns.
+Potentially bad, e.g. double payment.</p>
 </div>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_first_invocation_errors">First invocation errors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Maybe the POST got 4XX or 5XX.
+Maybe an exception when emitting the event.
+Anyway, the function receives the same event again.
+What happens?</p>
+</div>
+<div class="paragraph">
+<p>In this case it&#8217;s irrelevant whether the function is idempotent.
+It will repeat work whether idempotent or not.
+Idempotency only kicks in if a previous invocation was successful.</p>
+</div>
+<div class="paragraph">
+<p>Besides, if the first invocation errored,
+the Lambda service itself will re-invoke the function.
+EventBridge&#8217;s "at least once" delivery is by the by.</p>
+</div>
+<div class="paragraph">
+<p>The result of the function repeating work depends on how far it got the first time and what its work is.
+It might be fine (e.g. it got nowhere the first time, or the work is safely repeatable).
+It might be bad (e.g. two POSTS and a double payment).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_key_points">Key points</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_idempotent_safe_to_retry">Idempotent != safe to retry</h3>
+<div class="paragraph">
+<p>If the function errors,
+it may be re-invoked regardless of delivery semantics,
+and may repeat work regardless of idempotency.
+Partial failures are a headache no matter what.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_idempotent_safe_to_retry_after_success">Idempotent == safe to retry after success</h3>
+<div class="paragraph">
+<p>An idempotent function becomes a no-op if re-invoked after a success.
+That&#8217;s typically useful when working with "at least once" delivery.
+But it&#8217;s not always necessary.
+For some functions, repeating work is harmless.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_event_producers_shouldnt_worry_about_re_emitting_events">Event producers shouldn&#8217;t worry about re-emitting events</h3>
+<div class="paragraph">
+<p>EventBridge has "at least once" delivery.
+So don&#8217;t worry about re-emitting events.
+Consumers need to handle duplicates anyway.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
 </body>
 </html>
