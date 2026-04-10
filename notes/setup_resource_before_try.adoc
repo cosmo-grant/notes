@@ -1,0 +1,8 @@
+
+if __name__ == "__main__":
+    server = start_server()
+    try:
+        run_patched_client()
+        run_normal_clients()
+    finally:
+        server.shutdown()

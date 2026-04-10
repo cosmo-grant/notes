@@ -1,0 +1,201 @@
+= Remote Disconnected
+
+When we upgraded the Braintree Python SDK to 4.42.0
+we started getting `RemoteDisconnected` errors in our Lambda functions.
+Why?
+
+== First ingredient: urllib3 race condition
+
+Before sending a request,
+`urllib3` checks whether the connection is dropped via
+
+[source,python]
+----
+def is_connection_dropped(conn: BaseHTTPConnection) -> bool:  # Platform-specific
+    """
+    Returns True if the connection is dropped and should be closed.
+    :param conn: :class:`urllib3.connection.HTTPConnection` object.
+    """
+    return not conn.is_connected
+----
+
+which calls
+
+[source,python]
+----
+@property
+def is_connected(self) -> bool:
+    if self.sock is None:
+        return False
+    return not wait_for_read(self.sock, timeout=0.0)
+----
+
+I _think_ the idea is:
+
+* if the socket has readable data when no request is in progress, it must be a FIN,
+* so the connection is dropped, and `urllib3` gets another.
+
+There's a race condition:
+
+* if the connection is dropped _after_ the `wait_for_read`,
+* but _before_ we send our request,
+* then the request will fail with `RemoteDisconnected`.
+
+The race is inevitable.
+There must be a window between check and send,
+during which the connection might be dropped.
+
+Seeing is believing, so let's demonstrate.
+
+First, we'll set up a keep-alive HTTP server which drops idle connections after `TIMEOUT` seconds:
+
+[source,python]
+----
+class Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+    timeout = TIMEOUT
+
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        self.wfile.write(b"ok")
+
+    def log_message(self, format, *args):  # noqa: A002
+        pass  # suppress per-request and timeout logs
+
+
+def start_server() -> ThreadingHTTPServer:
+    server = ThreadingHTTPServer((SERVER_HOST, SERVER_PORT), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
+----
+
+Next, a client which disables the `is_connection_dropped` check, GETs, sleeps past `TIMEOUT` seconds, then GETs again.
+This client gets `RemoteDisconnected` for sure, proving the race in principle.
+
+[source,python]
+----
+def run_patched_client():
+    print("=== PATCHED CLIENT ===")
+
+    original_util = urllib3.util.connection.is_connection_dropped
+    original_pool = urllib3.connectionpool.is_connection_dropped
+
+    urllib3.util.connection.is_connection_dropped = lambda _: False
+    urllib3.connectionpool.is_connection_dropped = lambda _: False
+
+    try:
+        session = requests.Session()
+        print("Making first request...", end=" ")
+        response = session.get(SERVER_URL)
+        print(response.status_code)
+        print("Sleeping past the keep-alive timeout so the connection is dropped")
+        sleep(TIMEOUT + 1)
+
+        try:
+            print("Making second request...", end=" ")
+            response = session.get(SERVER_URL)
+            print(response.status_code)
+        except RequestException as e:
+            if "RemoteDisconnected" in str(e):
+                print("RemoteDisconnected")
+    finally:
+        urllib3.util.connection.is_connection_dropped = original_util
+        urllib3.connectionpool.is_connection_dropped = original_pool
+----
+
+And a pool of normal clients:
+These clients get `RemoteDisconnected` once in a while, proving the race in practice.
+
+[source,python]
+----
+def run_normal_clients():
+    print("=== NORMAL CLIENTS ===")
+
+    def worker():
+        session = requests.Session()
+        session.get(SERVER_URL)
+        sleep(TIMEOUT)
+        try:
+            session.get(SERVER_URL)
+            return "ok"
+        except RequestException as e:
+            return str(e)
+
+    num_ok = 0
+    num_remote_disconnected = 0
+    with ThreadPoolExecutor(max_workers=NUM_NORMAL_CLIENTS) as pool:
+        futures = [pool.submit(worker) for _ in range(NUM_NORMAL_CLIENTS)]
+        for f in as_completed(futures):
+            result = f.result()
+            if result == "ok":
+                num_ok += 1
+            elif "RemoteDisconnected" in result:
+                num_remote_disconnected += 1
+
+    print(f"RemoteDisconnected: {num_remote_disconnected}/{NUM_NORMAL_CLIENTS}")
+    print(f"OK: {num_ok}/{NUM_NORMAL_CLIENTS}")
+----
+
+Then run them (https://gist.github.com/cosmo-grant/5a3e64de2924f1ee359faf7c46dae790[full script]):
+
+[source,python]
+----
+if __name__ == "__main__":
+    server = start_server()
+    try:
+        run_patched_client()
+        run_normal_clients()
+    finally:
+        server.shutdown()
+----
+
+Sample output:
+
+[source,text]
+----
+% uv run scripts/repro_remote_disconnected.py
+=== PATCHED CLIENT ===
+Making first request... 200
+Sleeping past the keep-alive timeout so the connection is dropped
+Making second request... RemoteDisconnected
+
+=== NORMAL CLIENTS ===
+RemoteDisconnected: 4/50
+OK: 46/50
+----
+
+== Second ingredient: session per gateway
+
+`braintree` depends on `requests`, which depends on `urllib3`.
+
+In 4.42, they https://github.com/braintree/braintree_python/commit/cde3faab72d93fae5f9c5a3f4a8f7841a3522716[changed] how they manage `requests.Session` objects.
+Instead of creating a session per POST,
+when you create a `BraintreeGateway`, it stores an `Http` internally, as `self.config._http_strategy`.
+The first time you request through the gateway, the `Http` creates a `requests.Session`, as `self._thread_local.session`.
+
+A session per gateway, not per POST.
+A sensible idea: faster and less wasteful, since you can re-use connections.
+
+== Third ingredient: module-level gateway
+
+It's standard, recommended practice in AWS Lambda to set up some resources (configuration, connections, and the like) at module-level,
+so they're created once at INIT time,
+and then re-used across warm invocations.
+A sensible idea: faster and less wasteful, since you can re-use them.
+
+== The result
+
+You initialise the `BraintreeGateway` at module-level.
+The first time your function is invoked, the gateway creates a `requests.Session`.
+Your function is invoked again a while later,
+just when you're hitting the connection timeout,
+and the remote drops the connection between ``urllib3``'s check and send.
+So `RemoteDisconnected`.
+
+This will happen at a low rate,
+only when you get unlucky with the timing.
+But at scale a low rate is a high number.
