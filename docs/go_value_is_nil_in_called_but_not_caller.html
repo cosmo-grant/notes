@@ -474,10 +474,18 @@ false</code></pre>
 <div class="paragraph">
 <p>Surprising (to me)!</p>
 </div>
-<div class="paragraph">
-<p><code>s</code> compares equal to <code>nil</code>, then is returned.
-<code>r</code> is assigned to the return value.
-<code>r</code> doesn&#8217;t compare equal to <code>nil</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>s</code> compares equal to <code>nil</code>, then is returned.</p>
+</li>
+<li>
+<p><code>r</code> is assigned to the return value.</p>
+</li>
+<li>
+<p><code>r</code> doesn&#8217;t compare equal to <code>nil</code>.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>What&#8217;s going on?</p>
@@ -489,7 +497,7 @@ That&#8217;s why the first comparison prints <code>true</code>.</p>
 </div>
 <div class="paragraph">
 <p><code>foo()</code>'s return type is <code>Xer</code>, an interface.
-So <code>s</code> is an interface value.
+So <code>r</code> is an interface value.
 An interface value can be thought of as a (value, concrete type) tuple.
 In this case: <code>(nil, *main.S)</code>.
 <code>r</code>'s concrete type is non-<code>nil</code>.
