@@ -448,6 +448,15 @@ we started getting <code>RemoteDisconnected</code> errors in our Lambda function
 Why?</p>
 </div>
 </div>
+<div id="toc" class="toc">
+<div id="toctitle"></div>
+<ul class="sectlevel1">
+<li><a href="#_first_ingredient_urllib3_race_condition">First ingredient: urllib3 race condition</a></li>
+<li><a href="#_second_ingredient_session_per_gateway">Second ingredient: session per gateway</a></li>
+<li><a href="#_third_ingredient_module_level_gateway">Third ingredient: module-level gateway</a></li>
+<li><a href="#_mixing_the_ingredients">Mixing the ingredients</a></li>
+</ul>
+</div>
 </div>
 <div class="sect1">
 <h2 id="_first_ingredient_urllib3_race_condition">First ingredient: urllib3 race condition</h2>
@@ -513,7 +522,7 @@ There must be a window between check and send,
 during which the connection might be dropped.</p>
 </div>
 <div class="paragraph">
-<p>Seeing is believing, so let&#8217;s demonstrate.</p>
+<p>Let&#8217;s prove it.</p>
 </div>
 <div class="paragraph">
 <p>First, we&#8217;ll set up a keep-alive HTTP server which drops idle connections after <code>TIMEOUT</code> seconds:</p>
@@ -578,7 +587,7 @@ This client gets <code>RemoteDisconnected</code> for sure, proving the race in p
 </div>
 </div>
 <div class="paragraph">
-<p>And a pool of normal clients:
+<p>Finally, a pool of normal clients.
 These clients get <code>RemoteDisconnected</code> once in a while, proving the race in practice.</p>
 </div>
 <div class="listingblock">
@@ -612,7 +621,7 @@ These clients get <code>RemoteDisconnected</code> once in a while, proving the r
 </div>
 </div>
 <div class="paragraph">
-<p>Then run them (<a href="https://gist.github.com/cosmo-grant/5a3e64de2924f1ee359faf7c46dae790">full script</a>):</p>
+<p>Orchestrate (<a href="https://gist.github.com/cosmo-grant/5a3e64de2924f1ee359faf7c46dae790">full script</a>):</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -626,11 +635,11 @@ These clients get <code>RemoteDisconnected</code> once in a while, proving the r
 </div>
 </div>
 <div class="paragraph">
-<p>Sample output:</p>
+<p>And run:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% uv run scripts/repro_remote_disconnected.py
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% uv run remote_disconnected_demo.py
 === PATCHED CLIENT ===
 Making first request... 200
 Sleeping past the keep-alive timeout so the connection is dropped
@@ -650,14 +659,12 @@ OK: 46/50</code></pre>
 <p><code>braintree</code> depends on <code>requests</code>, which depends on <code>urllib3</code>.</p>
 </div>
 <div class="paragraph">
-<p>In 4.42, they <a href="https://github.com/braintree/braintree_python/commit/cde3faab72d93fae5f9c5a3f4a8f7841a3522716">changed</a> how they manage <code>requests.Session</code> objects.
-Instead of creating a session per POST,
-when you create a <code>BraintreeGateway</code>, it stores an <code>Http</code> internally, as <code>self.config._http_strategy</code>.
-The first time you request through the gateway, the <code>Http</code> creates a <code>requests.Session</code>, as <code>self._thread_local.session</code>.</p>
-</div>
-<div class="paragraph">
-<p>A session per gateway, not per POST.
-A sensible idea: faster and less wasteful, since you can re-use connections.</p>
+<p>In 4.42, it <a href="https://github.com/braintree/braintree_python/commit/cde3faab72d93fae5f9c5a3f4a8f7841a3522716">changed</a> how it manages <code>requests.Session</code> objects.
+Before, a <code>BraintreeGateway</code> creates a session per POST.
+In 4.42, a <code>BraintreeGateway</code> stores an <code>Http</code> internally, as <code>self.config._http_strategy</code>.
+The first time you request through the gateway, the <code>Http</code> creates a <code>requests.Session</code>, as <code>self._thread_local.session</code>.
+A session per gateway, not per POST.
+A sensible idea: faster and less wasteful.</p>
 </div>
 </div>
 </div>
@@ -665,22 +672,22 @@ A sensible idea: faster and less wasteful, since you can re-use connections.</p>
 <h2 id="_third_ingredient_module_level_gateway">Third ingredient: module-level gateway</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>It&#8217;s standard, recommended practice in AWS Lambda to set up some resources (configuration, connections, and the like) at module-level,
-so they&#8217;re created once at INIT time,
+<p>It&#8217;s standard, recommended practice in AWS Lambda to set up some resources (configuration, connections, etc.) at module-level,
+so they&#8217;re created once at init time,
 and then re-used across warm invocations.
-A sensible idea: faster and less wasteful, since you can re-use them.</p>
+A sensible idea: faster and less wasteful.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_result">The result</h2>
+<h2 id="_mixing_the_ingredients">Mixing the ingredients</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>You initialise the <code>BraintreeGateway</code> at module-level.
 The first time your function is invoked, the gateway creates a <code>requests.Session</code>.
 Your function is invoked again a while later,
 just when you&#8217;re hitting the connection timeout,
-and the remote drops the connection between <code>urllib3</code>'s check and send.
+and the remote disconnects between <code>urllib3</code>'s check and send.
 So <code>RemoteDisconnected</code>.</p>
 </div>
 <div class="paragraph">

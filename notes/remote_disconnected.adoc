@@ -1,4 +1,6 @@
 = Remote Disconnected
+:toc: preamble
+:toc-title:
 
 When we upgraded the Braintree Python SDK to 4.42.0
 we started getting `RemoteDisconnected` errors in our Lambda functions.
@@ -45,7 +47,7 @@ The race is inevitable.
 There must be a window between check and send,
 during which the connection might be dropped.
 
-Seeing is believing, so let's demonstrate.
+Let's prove it.
 
 First, we'll set up a keep-alive HTTP server which drops idle connections after `TIMEOUT` seconds:
 
@@ -107,7 +109,7 @@ def run_patched_client():
         urllib3.connectionpool.is_connection_dropped = original_pool
 ----
 
-And a pool of normal clients:
+Finally, a pool of normal clients.
 These clients get `RemoteDisconnected` once in a while, proving the race in practice.
 
 [source,python]
@@ -140,7 +142,7 @@ def run_normal_clients():
     print(f"OK: {num_ok}/{NUM_NORMAL_CLIENTS}")
 ----
 
-Then run them (https://gist.github.com/cosmo-grant/5a3e64de2924f1ee359faf7c46dae790[full script]):
+Orchestrate (https://gist.github.com/cosmo-grant/5a3e64de2924f1ee359faf7c46dae790[full script]):
 
 [source,python]
 ----
@@ -153,11 +155,11 @@ if __name__ == "__main__":
         server.shutdown()
 ----
 
-Sample output:
+And run:
 
 [source,text]
 ----
-% uv run scripts/repro_remote_disconnected.py
+% uv run remote_disconnected_demo.py
 === PATCHED CLIENT ===
 Making first request... 200
 Sleeping past the keep-alive timeout so the connection is dropped
@@ -172,28 +174,27 @@ OK: 46/50
 
 `braintree` depends on `requests`, which depends on `urllib3`.
 
-In 4.42, they https://github.com/braintree/braintree_python/commit/cde3faab72d93fae5f9c5a3f4a8f7841a3522716[changed] how they manage `requests.Session` objects.
-Instead of creating a session per POST,
-when you create a `BraintreeGateway`, it stores an `Http` internally, as `self.config._http_strategy`.
+In 4.42, it https://github.com/braintree/braintree_python/commit/cde3faab72d93fae5f9c5a3f4a8f7841a3522716[changed] how it manages `requests.Session` objects.
+Before, a `BraintreeGateway` creates a session per POST.
+In 4.42, a `BraintreeGateway` stores an `Http` internally, as `self.config._http_strategy`.
 The first time you request through the gateway, the `Http` creates a `requests.Session`, as `self._thread_local.session`.
-
 A session per gateway, not per POST.
-A sensible idea: faster and less wasteful, since you can re-use connections.
+A sensible idea: faster and less wasteful.
 
 == Third ingredient: module-level gateway
 
-It's standard, recommended practice in AWS Lambda to set up some resources (configuration, connections, and the like) at module-level,
-so they're created once at INIT time,
+It's standard, recommended practice in AWS Lambda to set up some resources (configuration, connections, etc.) at module-level,
+so they're created once at init time,
 and then re-used across warm invocations.
-A sensible idea: faster and less wasteful, since you can re-use them.
+A sensible idea: faster and less wasteful.
 
-== The result
+== Mixing the ingredients
 
 You initialise the `BraintreeGateway` at module-level.
 The first time your function is invoked, the gateway creates a `requests.Session`.
 Your function is invoked again a while later,
 just when you're hitting the connection timeout,
-and the remote drops the connection between ``urllib3``'s check and send.
+and the remote disconnects between ``urllib3``'s check and send.
 So `RemoteDisconnected`.
 
 This will happen at a low rate,
