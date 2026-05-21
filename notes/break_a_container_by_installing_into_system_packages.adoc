@@ -1,0 +1,16 @@
+"Don't install into system packages, even in a container. It can break things."
+Is that right, in a container?
+Disregard any other reasons for or against installing into system python.
+Aim:
+- get a container
+- install app's deps into system packages
+- either conflict, or app runs but crashes
+
+Does not work in python:3.13 image, because `pip list` just gives pip.
+It vendors its deps, and no packages depends on it, so no go.
+
+Older pythons may include setuptools.
+Some packages depend on setuptools.
+So potential for install-time failure here.
+
+What if we have an image with extra stuff, e.g. some cli tool?
