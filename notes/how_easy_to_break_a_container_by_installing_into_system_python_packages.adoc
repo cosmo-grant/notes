@@ -1,3 +1,8 @@
+= How easy to break a container by installing into system Python packages?
+
+TODO
+
+////
 "Don't install into system packages, even in a container. It can break things."
 Is that right, in a container?
 Disregard any other reasons for or against installing into system python.
@@ -14,3 +19,4 @@ Some packages depend on setuptools.
 So potential for install-time failure here.
 
 What if we have an image with extra stuff, e.g. some cli tool?
+////

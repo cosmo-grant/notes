@@ -1,3 +1,8 @@
+= Client-side TIME_WAIT on Linux versus MacOS
+
+TODO
+
+////
 [source, python]
 ----
 import socket
@@ -36,3 +41,4 @@ on mac, bind fails if 65442 in local or foreign column
 Loopback is necessary for the failure to be possible — without it, the client-side TIME_WAIT lives in a different kernel and the server's bind can't see it
 macOS's strict bind check is what turns that visibility into an actual refusal. Linux can see the same TIME_WAIT and shrugs. (My BSD-quirk point.)
 Both factors are needed, and the Docker test isolates which one is doing the refusing. Nice empirical resolution.
+////
