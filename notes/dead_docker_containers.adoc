@@ -1,0 +1,52 @@
+= Dead Docker Containers
+
+[source,text]
+----
+% docker container ls -a --filter="status=dead"
+CONTAINER ID   IMAGE          COMMAND                   CREATED        STATUS    PORTS     NAMES
+8c1f9c19e3ca   6ea52a02734d   "go build main.go"        7 months ago   Dead                cranky_raman
+6aeadbba01a1   0c745292b7b3   "python -u -c 'print…"    7 months ago   Dead                zen_dirac
+7b76f3ab09f8   0c745292b7b3   "python -u -c 'print…"    7 months ago   Dead                peaceful_austin
+183c64133119   0c745292b7b3   "python -u -c 'impor…"    7 months ago   Dead                hardcore_heyrovsky
+d18d194755a8   0c745292b7b3   "python -u -c 'print…"    7 months ago   Dead                objective_sammet
+ff7c022814bd   0c745292b7b3   "python -u -c 'impor…"    7 months ago   Dead                vigilant_leavitt
+a446cb2a6ced   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                wonderful_sinoussi
+593435d3a225   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                cranky_bhaskara
+ae034ec0dd16   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                flamboyant_burnell
+d10777947ae0   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                vigilant_stonebraker
+bf8ddec7c81c   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                youthful_elgamal
+f277ee51216f   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                musing_cohen
+53d2fc7c108e   0c745292b7b3   "python -u -c print(…"    7 months ago   Dead                awesome_shaw
+e655788b2443   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                elegant_hellman
+404f9b01f04e   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                dreamy_euler
+a5be724398ba   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                zen_jackson
+482796b403af   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                zealous_khayyam
+60d89727e440   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                nervous_poitras
+5938d2099ee5   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                compassionate_heisenberg
+80e54e98422d   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                recursing_kirch
+c4b188301547   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                adoring_bardeen
+907f198c79e3   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                awesome_blackburn
+a7d9aa9d58b6   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                serene_einstein
+99c9ca04ca41   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                stupefied_maxwell
+49e3bad06b9f   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                flamboyant_shaw
+235363d26e98   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                serene_bohr
+024548f71175   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                agitated_lichterman
+336cd86ad2de   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                optimistic_faraday
+ff09f4bf68de   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                intelligent_wright
+5ac715a692cf   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                inspiring_snyder
+1ae015e6e99f   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                funny_heyrovsky
+0b72dcdc05ba   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                heuristic_joliot
+b14b1972a18f   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                hardcore_hellman
+bbdb1b01cad0   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                admiring_maxwell
+061b4cd5cde5   0c745292b7b3   "python -c '\nimport …"   7 months ago   Dead                happy_franklin
+0a15f257dbe3   0c745292b7b3   "python -c '\nprint('…"   7 months ago   Dead                gracious_carson
+73324cffa1a3   0c745292b7b3   "python -c \nprint('h…"   7 months ago   Dead                kind_brahmagupta
+5e14b78ee50f   0c745292b7b3   "python -u -c '\nimpo…"   7 months ago   Dead                infallible_pike
+438e24649ab3   0c745292b7b3   "python -u -c '\nimpo…"   7 months ago   Dead                trusting_pike
+df9b0ddee923   0c745292b7b3   "python -u -c '\nprin…"   7 months ago   Dead                festive_colden
+5c3822fc9c58   0c745292b7b3   "python -u -c \nprint…"   7 months ago   Dead                hardcore_lederberg
+c26dfef8de34   0c745292b7b3   "python -u -c '\nimpo…"   7 months ago   Dead                elastic_agnesi
+e316cd58c6bc   0c745292b7b3   "python -u -c '\nimpo…"   7 months ago   Dead                vigilant_wilson
+8b2e22b37d79   0c745292b7b3   "python -u -c '\nprin…"   7 months ago   Dead                hopeful_hodgkin
+6a3bd4a75d95   0c745292b7b3   "python -u -c \nprint…"   7 months ago   Dead                great_rubin
+----
