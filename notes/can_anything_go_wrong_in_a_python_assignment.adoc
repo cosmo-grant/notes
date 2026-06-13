@@ -1,13 +1,91 @@
-= Can anything go wrong in a Python assignment?
+////
+= A resource management rabbit hole
 
-TODO
+Which is better?
+
+[source,python]
+----
+f = open("spam.txt")
+try:
+    f.write("eggs")
+finally:
+    f.close()
+----
+
+or
+
+[source,python]
+----
+try:
+    f = open("spam.txt")
+    f.write("eggs")
+finally:
+    f.close()
+----
+
+
+== Case 1: `spam.txt` doesn't exist
+
+If we `open` before the `try` we get
+
+[source,console]
+----
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    f = open("spam.txt")
+FileNotFoundError: [Errno 2] No such file or directory: 'spam.txt'
+----
+
+If inside the `try` we get
+
+[source,console]
+----
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+    f = open("spam.txt")
+FileNotFoundError: [Errno 2] No such file or directory: 'spam.txt'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+    f.close()
+    ^
+NameError: name 'f' is not defined
+----
+
+So `open` before the `try`.
+
+== Case 2: `
+
+
+
+
+
+error in assignment?
+signal?
+
 
 ////
-if __name__ == "__main__":
     server = start_server()
     try:
-        run_patched_client()
-        run_normal_clients()
+
     finally:
         server.shutdown()
+
+What happens if exception in __enter__ of context manager?
+
+class Foo:
+    def __enter__(self):
+        print("in enter")
+        raise Exception
+
+    def __exit__(self, exc_type, exc_value, tb):
+        print("in exit")
+
+
+with Foo() as foo:
+    pass
+
+exit doesn't run!
 ////

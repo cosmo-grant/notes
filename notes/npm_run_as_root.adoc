@@ -1,0 +1,2 @@
+npm allows packages to run arbitrary script post-install as the logged-in user
+prove this

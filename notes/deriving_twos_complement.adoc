@@ -1,0 +1,82 @@
+= Deriving Two's Complement
+:stem:
+
+We represent non-negative numbers using bytes via the obvious scheme: padded binary.
+Under this scheme, bytes represent 0 to 255, and 00001100, say, represents 12.
+Other schemes are possible.
+But this one's nice.
+
+Given the scheme, call it stem:[b], we can make an adder circuit:
+it takes two bytes as input and outputs the byte which represents the sum (mod 256) of what they represent.
+
+Fine, but what if we want to represent negative numbers too?
+Let's pick a scheme, call it stem:[s], for that.
+
+It would be nice if we could use the same adder circuit for stem:[s] as stem:[b].
+Then we wouldn't need to build a new circuit or care about the scheme when dispatching sums to circuits.
+All sums would go to the adder.
+Also, because stem:[i - j = i + -j], we could use the adder for subtraction too.
+
+To say we can use the adder for stem:[s] is to say:
+
+[stem]
+++++
+s(w * u) \equiv s(w) + s(u)
+++++
+
+for any bytes stem:[w, u], where stem:[*] is the operation carried out by the circuit and stem:[\equiv] is congruence mod 256.
+
+How far does this constrain stem:[s]?
+
+In what follows I sometimes identify bytes and what they represent given stem:[b],
+e.g. 00000011 and 3.
+Yes, it risks confusion to rely on stem:[b] when discussing stem:[s].
+But it should be clear enough what's meant and it's easier to write down numbers than bytes.
+
+Now, stem:[s(0) = s(0 * 0) \equiv s(0) + s(0)] so stem:[0 \equiv s(0)].
+Furthermore, stem:[s(2) = s(1 * 1) \equiv s(1) + s(1) = 2 \cdot s(1)],
+and so stem:[s(3) = s(2 * 1) \equiv s(2) + s(1) \equiv 3 \cdot s(1)],
+and so on.
+Thus: stem:[s(k) \equiv k \cdot s(1)] for all stem:[k = 0, ..., 255].
+So settling stem:[s(1)] settles stem:[s] up to congruence.
+
+The adder constraint alone gets us no further.
+Indeed, suppose stem:[s(k) \equiv k \cdot s(1)] for stem:[k = 0, ..., 255].
+In other words, stem:[s(x) \equiv b(x) \cdot s(1)] for every byte stem:[x].
+Then stem:[s(w * u) \equiv b(w * u) \cdot s(1) \equiv (b(w) + b(u)) \cdot s(1) \equiv b(w) \cdot s(1) + b(u) \cdot s(1) \equiv s(w) + s(u)].
+So the adder constraint and stem:[s(k) \equiv k \cdot s(1)] are equivalent.
+
+The adder constraint leaves stem:[s] pretty open:
+set stem:[s(1)] to any number you like,
+then for stem:[s(k)] pick any member of stem:[k \cdot s(1)]'s equivalence class mod 256.
+For example, we could set stem:[s(0) = 0, s(1) = 123, s(2) = 246, s(3) = 369, ...],
+or stem:[s(0) = 0, s(1) = 128, s(2) = 0, s(3) = 128, ...],
+or stem:[s(0) = 0, s(1) = 0, s(2) = 0, s(3) = 0, ...].
+
+Let's impose some natural further constraints.
+
+We might insist that stem:[s] is injective: different bytes represent different numbers.
+That's equivalent to stem:[s(1)] and 256 being coprime, i.e. stem:[s(1)] being odd.
+
+Or we might insist that stem:[s] can represent 1,
+and uses the same byte as stem:[b] to do it,
+i.e. stem:[s(1) = 1].
+That implies stem:[s(k) \equiv k],
+which determines stem:[s] up to congruence.
+For example, we could set stem:[s(0) = 0, s(1) = 1, s(2) = 258, s(3) = -253, s(4) = 21252, ...].
+
+Or we might insist that stem:[s(1) = 1] _and_ stem:[s] represents a contiguous range of numbers.
+In that case, all we can choose is where to jump backwards by 256:
+immediately, giving stem:[s(1) = 1, s(2) = -254, s(3) = -253, ..., s(255) = -1, s(0) = 0];
+or some way along, giving e.g. stem:[s(1) = 1, s(2) = 2, ..., s(85) = 85, s(86) = -170, s(87) = -169, ..., s(255) = -1, s(0) = 0],
+or never, giving stem:[s(1) = 1, s(2) = 2, ..., s(0) = 256],
+(although that defeats the aim of finding a schema to represent negatives).
+
+If we jump at 128 we get stem:[s(1) = 1, ..., s(127) = 127, s(128) = -128, s(129) = -127, ..., s(0) = 0], which has two nice properties: it's centred at 0 and the high bit signals the sign. That's two's complement.
+
+To summarize.
+How to pick a scheme stem:[s] for representing signed numbers as bytes?
+We want to re-use the adder, i.e. stem:[s(w * u) \equiv s(w) + s(u)].
+But that only settles stem:[s] up to congruence after a free choice of stem:[s(1)].
+Choosing stem:[s(1) = 1], sensibly enough, gives stem:[s(k) \equiv k].
+Two's complement is just a nice choice of representatives from the equivalence classes, giving a contiguous range centred at 0 with high bit signaling the sign.
