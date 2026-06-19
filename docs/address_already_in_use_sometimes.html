@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>aws vpc crow&#8217;s foot</title>
+<title>Address already in use, sometimes</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -437,38 +437,193 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>aws vpc crow&#8217;s foot</h1>
+<h1>Address already in use, sometimes</h1>
 </div>
 <div id="content">
 <div class="paragraph">
-<p>As best I can tell from the docs and some experiments:</p>
+<p>Output?</p>
 </div>
-<div class="imageblock">
+<div class="listingblock">
 <div class="content">
-<img src="./images/aws_vpc_crows_foot.png" alt="aws vpc crows foot">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import socket
+from threading import Thread
+
+
+def client():
+    sock = socket.create_connection(("127.0.0.1", 44444))
+    sock.close()
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+    Thread(target=client).start()
+    conn, _ = sock1.accept()
+    with conn:
+      # wait for client to close
+      while conn.recv(128):
+        pass
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>That is:</p>
+<p>It depends.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>an instance has 1 or more ENIs</p>
-</li>
-<li>
-<p>an ENI has 0 or 1 instances</p>
-</li>
-<li>
-<p>a security group has 0 or more ENIs</p>
-</li>
-<li>
-<p>a subnet has exactly 1 route table</p>
-</li>
-<li>
-<p>and so on</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>On macOS:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% uv run python main.py
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 21, in &lt;module&gt;
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On Linux:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% uv run python main.py  # no error</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I repeated 10 times: it always errored on macOS and never on Linux.
+What&#8217;s going on?</p>
+</div>
+<div class="paragraph">
+<p>Some more data points.</p>
+</div>
+<div class="paragraph">
+<p><strong>First.</strong>
+If we remove <code>conn</code> and the client entirely</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import socket
+from threading import Thread
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then it never errors on macOS.
+So <code>sock2.bind()</code> must have been clashing with <code>conn</code>, not <code>sock1</code>.
+(We know it wasn&#8217;t clashing with the client&#8217;s <code>sock</code> because the client&#8217;s local port isn&#8217;t <code>44444</code>.)</p>
+</div>
+<div class="paragraph">
+<p><strong>Second.</strong>
+If we <code>sleep(1)</code> between the first and second <code>with</code> blocks, then it never errors.
+That suggests the clash is a matter of timing, not protocol.</p>
+</div>
+<div class="paragraph">
+<p><strong>Third.</strong>
+If we replace <code>127.0.0.1</code> by <code>localhost</code>, which adds a tiny name resolution delay before <code>sock2</code> binds, then it only occasionally errors on macOS.
+(I got 3 errors in 10 runs.)
+That again suggests the clash is a matter of timing, not protocol, and that the timing is knife-edge.</p>
+</div>
+<div class="paragraph">
+<p><strong>Fourth.</strong>
+If we ensure <code>conn</code> is the active closer, rather than the client</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import socket
+from threading import Thread
+from time import sleep
+
+
+def client():
+    sock = socket.create_connection(("127.0.0.1", 44444))
+    sleep(1)
+    sock.close()
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+    Thread(target=client).start()
+    conn, _ = sock1.accept()
+    conn.close()
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then it always errors on both.</p>
+</div>
+<div class="paragraph">
+<p>macOS:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% repeat 3 uv run python main.py
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 20, in &lt;module&gt;
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 13, in &lt;module&gt;
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 13, in &lt;module&gt;
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Linux:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">% docker container run -it -v ${PWD}:/test_sock -w /test_sock python:3.14 /bin/sh
+# for i in $(seq 1 3); do python main.py; done
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 20, in &lt;module&gt;
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 13, in &lt;module&gt;
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 13, in &lt;module&gt;
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But these errors have a different cause.
+The first error, on L20, is because <code>sock2</code> is trying to bind to <code>conn</code>'s address,
+but <code>conn</code> is still waiting for the client to close.
+The later errors, on L13, are because the active closer, <code>conn</code>, once the client has closed, is put in <code>TIME_WAIT</code> for a while,
+and the kernel blocks binds to addresses in <code>TIME_WAIT</code>.
+(The <code>TIME_WAIT</code> persists across runs.)</p>
+</div>
+<div class="paragraph">
+<p>Where does that leave us?
+<strong>My main takeaway:</strong> <code>conn.close()</code> returns while the kernel is still closing the connection asynchronously,
+and the closing takes a fraction longer on macOS than Linux.
+Also, socket programming is delicate indeed.</p>
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>

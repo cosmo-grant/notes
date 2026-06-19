@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>aws vpc crow&#8217;s foot</title>
+<title>Deriving Two&#8217;s Complement</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -437,38 +437,105 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>aws vpc crow&#8217;s foot</h1>
+<h1>Deriving Two&#8217;s Complement</h1>
 </div>
 <div id="content">
 <div class="paragraph">
-<p>As best I can tell from the docs and some experiments:</p>
+<p>We represent non-negative numbers using bytes via the obvious scheme: padded binary.
+Under this scheme, bytes represent 0 to 255, and 00001100, say, represents 12.
+Other schemes are possible.
+But this one&#8217;s nice.</p>
 </div>
-<div class="imageblock">
+<div class="paragraph">
+<p>Given the scheme, call it \$b\$, we can make an adder circuit:
+it takes two bytes as input and outputs the byte which represents the sum (mod 256) of what they represent.</p>
+</div>
+<div class="paragraph">
+<p>Fine, but what if we want to represent negative numbers too?
+Let&#8217;s pick a scheme, call it \$s\$, for that.</p>
+</div>
+<div class="paragraph">
+<p>It would be nice if we could use the same adder circuit for \$s\$ as \$b\$.
+Then we wouldn&#8217;t need to build a new circuit or care about the scheme when dispatching sums to circuits.
+All sums would go to the adder.
+Also, because \$i - j = i + -j\$, we could use the adder for subtraction too.</p>
+</div>
+<div class="paragraph">
+<p>To say we can use the adder for \$s\$ is to say:</p>
+</div>
+<div class="stemblock">
 <div class="content">
-<img src="./images/aws_vpc_crows_foot.png" alt="aws vpc crows foot">
+\$s(w * u) \equiv s(w) + s(u)\$
 </div>
 </div>
 <div class="paragraph">
-<p>That is:</p>
+<p>for any bytes \$w, u\$, where \$*\$ is the operation carried out by the circuit and \$\equiv\$ is congruence mod 256.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>an instance has 1 or more ENIs</p>
-</li>
-<li>
-<p>an ENI has 0 or 1 instances</p>
-</li>
-<li>
-<p>a security group has 0 or more ENIs</p>
-</li>
-<li>
-<p>a subnet has exactly 1 route table</p>
-</li>
-<li>
-<p>and so on</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>How far does this constrain \$s\$?</p>
+</div>
+<div class="paragraph">
+<p>In what follows I sometimes identify bytes and what they represent given \$b\$,
+e.g. 00000011 and 3.
+Yes, it risks confusion to rely on \$b\$ when discussing \$s\$.
+But it should be clear enough what&#8217;s meant and it&#8217;s easier to write down numbers than bytes.</p>
+</div>
+<div class="paragraph">
+<p>Now, \$s(0) = s(0 * 0) \equiv s(0) + s(0)\$ so \$0 \equiv s(0)\$.
+Furthermore, \$s(2) = s(1 * 1) \equiv s(1) + s(1) = 2 \cdot s(1)\$,
+and so \$s(3) = s(2 * 1) \equiv s(2) + s(1) \equiv 3 \cdot s(1)\$,
+and so on.
+Thus: \$s(k) \equiv k \cdot s(1)\$ for all \$k = 0, ..., 255\$.
+So settling \$s(1)\$ settles \$s\$ up to congruence.</p>
+</div>
+<div class="paragraph">
+<p>The adder constraint alone gets us no further.
+Indeed, suppose \$s(k) \equiv k \cdot s(1)\$ for \$k = 0, ..., 255\$.
+In other words, \$s(x) \equiv b(x) \cdot s(1)\$ for every byte \$x\$.
+Then \$s(w * u) \equiv b(w * u) \cdot s(1) \equiv (b(w) + b(u)) \cdot s(1) \equiv b(w) \cdot s(1) + b(u) \cdot s(1) \equiv s(w) + s(u)\$.
+So the adder constraint and \$s(k) \equiv k \cdot s(1)\$ are equivalent.</p>
+</div>
+<div class="paragraph">
+<p>The adder constraint leaves \$s\$ pretty open:
+set \$s(1)\$ to any number you like,
+then for \$s(k)\$ pick any member of \$k \cdot s(1)\$'s equivalence class mod 256.
+For example, we could set \$s(0) = 0, s(1) = 123, s(2) = 246, s(3) = 369, ...\$,
+or \$s(0) = 0, s(1) = 128, s(2) = 0, s(3) = 128, ...\$,
+or \$s(0) = 0, s(1) = 0, s(2) = 0, s(3) = 0, ...\$.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s impose some natural further constraints.</p>
+</div>
+<div class="paragraph">
+<p>We might insist that \$s\$ is injective: different bytes represent different numbers.
+That&#8217;s equivalent to \$s(1)\$ and 256 being coprime, i.e. \$s(1)\$ being odd.</p>
+</div>
+<div class="paragraph">
+<p>Or we might insist that \$s\$ can represent 1,
+and uses the same byte as \$b\$ to do it,
+i.e. \$s(1) = 1\$.
+That implies \$s(k) \equiv k\$,
+which determines \$s\$ up to congruence.
+For example, we could set \$s(0) = 0, s(1) = 1, s(2) = 258, s(3) = -253, s(4) = 21252, ...\$.</p>
+</div>
+<div class="paragraph">
+<p>Or we might insist that \$s(1) = 1\$ <em>and</em> \$s\$ represents a contiguous range of numbers.
+In that case, all we can choose is where to jump backwards by 256:
+immediately, giving \$s(1) = 1, s(2) = -254, s(3) = -253, ..., s(255) = -1, s(0) = 0\$;
+or some way along, giving e.g. \$s(1) = 1, s(2) = 2, ..., s(85) = 85, s(86) = -170, s(87) = -169, ..., s(255) = -1, s(0) = 0\$,
+or never, giving \$s(1) = 1, s(2) = 2, ..., s(0) = 256\$,
+(although that defeats the aim of finding a schema to represent negatives).</p>
+</div>
+<div class="paragraph">
+<p>If we jump at 128 we get \$s(1) = 1, ..., s(127) = 127, s(128) = -128, s(129) = -127, ..., s(0) = 0\$, which has two nice properties: it&#8217;s centred at 0 and the high bit signals the sign. That&#8217;s two&#8217;s complement.</p>
+</div>
+<div class="paragraph">
+<p>To summarize.
+How to pick a scheme \$s\$ for representing signed numbers as bytes?
+We want to re-use the adder, i.e. \$s(w * u) \equiv s(w) + s(u)\$.
+But that only settles \$s\$ up to congruence after a free choice of \$s(1)\$.
+Choosing \$s(1) = 1\$, sensibly enough, gives \$s(k) \equiv k\$.
+Two&#8217;s complement is just a nice choice of representatives from the equivalence classes, giving a contiguous range centred at 0 with high bit signaling the sign.</p>
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
@@ -478,5 +545,29 @@ if (!hljs.initHighlighting.called) {
   ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
 }
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
 </body>
 </html>
