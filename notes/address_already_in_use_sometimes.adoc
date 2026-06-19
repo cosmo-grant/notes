@@ -1,0 +1,170 @@
+= Address already in use, sometimes
+
+Output?
+
+[source, python]
+----
+import socket
+from threading import Thread
+
+
+def client():
+    sock = socket.create_connection(("127.0.0.1", 44444))
+    sock.close()
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+    Thread(target=client).start()
+    conn, _ = sock1.accept()
+    with conn:
+      # wait for client to close
+      while conn.recv(128):
+        pass
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))
+----
+
+It depends.
+
+On macOS:
+
+[source, text]
+----
+% uv run python main.py
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 21, in <module>
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+----
+
+On Linux:
+
+[source, text]
+----
+% uv run python main.py  # no error
+----
+
+I repeated 10 times: it always errored on macOS and never on Linux.
+What's going on?
+
+Some more data points.
+
+**First.**
+If we remove `conn` and the client entirely
+
+[source, python]
+----
+import socket
+from threading import Thread
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))
+----
+
+then it never errors on macOS.
+So `sock2.bind()` must have been clashing with `conn`, not `sock1`.
+(We know it wasn't clashing with the client's `sock` because the client's local port isn't `44444`.)
+
+**Second.**
+If we `sleep(1)` between the first and second `with` blocks, then it never errors.
+That suggests the clash is a matter of timing, not protocol.
+
+**Third.**
+If we replace `127.0.0.1` by `localhost`, which adds a tiny name resolution delay before `sock2` binds, then it only occasionally errors on macOS.
+(I got 3 errors in 10 runs.)
+That again suggests the clash is a matter of timing, not protocol, and that the timing is knife-edge.
+
+**Fourth.**
+If we ensure `conn` is the active closer, rather than the client
+
+[source, python]
+----
+import socket
+from threading import Thread
+from time import sleep
+
+
+def client():
+    sock = socket.create_connection(("127.0.0.1", 44444))
+    sleep(1)
+    sock.close()
+
+
+with socket.socket() as sock1:
+    sock1.bind(("127.0.0.1", 44444))
+    sock1.listen()
+    Thread(target=client).start()
+    conn, _ = sock1.accept()
+    conn.close()
+
+with socket.socket() as sock2:
+    sock2.bind(("127.0.0.1", 44444))
+----
+
+then it always errors on both.
+
+macOS:
+
+[source, text]
+----
+% repeat 3 uv run python main.py
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 20, in <module>
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 13, in <module>
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+Traceback (most recent call last):
+  File "/private/tmp/test_socket/main.py", line 13, in <module>
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+----
+
+Linux:
+
+[source, text]
+----
+% docker container run -it -v ${PWD}:/test_sock -w /test_sock python:3.14 /bin/sh
+# for i in $(seq 1 3); do python main.py; done
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 20, in <module>
+    sock2.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 13, in <module>
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
+Traceback (most recent call last):
+  File "/test_sock/main.py", line 13, in <module>
+    sock1.bind(("127.0.0.1", 44444))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
+----
+
+But these errors have a different cause.
+The first error, on L20, is because `sock2` is trying to bind to ``conn``'s address,
+but `conn` is still waiting for the client to close.
+The later errors, on L13, are because the active closer, `conn`, once the client has closed, is put in `TIME_WAIT` for a while,
+and the kernel blocks binds to addresses in `TIME_WAIT`.
+(The `TIME_WAIT` persists across runs.)
+
+Where does that leave us?
+**My main takeaway:** `conn.close()` returns while the kernel is still closing the connection asynchronously,
+and the closing takes a fraction longer on macOS than Linux.
+Also, socket programming is delicate indeed.
