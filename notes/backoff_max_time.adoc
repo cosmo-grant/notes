@@ -91,7 +91,7 @@ A tiny change makes `backoff` behave as I originally expected:
 [source,diff]
 ----
 commit 8d77daadf98ad86e23e15432fccf8cf7ed571e16
-Author: Cosmo Grant <cosmo.grant@postcodelottery.co.uk>
+Author: Cosmo Grant <foo@bar.baz.>
 Date:   Wed May 7 12:04:26 2025 +0100
 
     calculate elapsed time _after_ calling the target function
