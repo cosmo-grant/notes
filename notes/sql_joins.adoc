@@ -1,4 +1,5 @@
 = sql joins
+:published: 2025-12-05
 
 I keep the `join` variants straight by remembering these tables
 

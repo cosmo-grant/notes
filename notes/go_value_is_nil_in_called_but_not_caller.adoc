@@ -1,4 +1,5 @@
 = Go value is nil in called but not caller
+:published: 2026-04-05
 
 [source,go]
 ----

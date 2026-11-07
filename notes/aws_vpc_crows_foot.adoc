@@ -1,4 +1,5 @@
 = aws vpc crow's foot
+:published: 2025-12-05
 
 As best I can tell from the docs and some experiments:
 

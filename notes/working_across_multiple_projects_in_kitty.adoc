@@ -1,4 +1,5 @@
 = Working across multiple projects with kitty
+:published: 2025-12-05
 :experimental:
 :commandkey: &#8984;
 

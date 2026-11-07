@@ -1,4 +1,5 @@
 = Deriving Two's Complement
+:published: 2026-06-19
 :stem: asciimath
 
 We represent non-negative numbers using bytes via the obvious scheme: padded binary.
