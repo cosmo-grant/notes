@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Notes</title>
+  <link href="https://cosmo-grant.github.io/notes/"/>
+  <link rel="self" href="https://cosmo-grant.github.io/notes/feed.xml"/>
+  <id>https://cosmo-grant.github.io/notes/</id>
+  <updated>2026-11-07T00:00:00Z</updated>
+  <author><name>Cosmo Grant</name></author>
+  <entry>
+    <title>Sattolo</title>
+    <link href="https://cosmo-grant.github.io/notes/sattolo.html"/>
+    <id>https://cosmo-grant.github.io/notes/sattolo.html</id>
+    <published>2026-11-07T00:00:00Z</published>
+    <updated>2026-11-07T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Deriving Two's Complement</title>
+    <link href="https://cosmo-grant.github.io/notes/deriving_twos_complement.html"/>
+    <id>https://cosmo-grant.github.io/notes/deriving_twos_complement.html</id>
+    <published>2026-06-19T00:00:00Z</published>
+    <updated>2026-06-19T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Address already in use, sometimes</title>
+    <link href="https://cosmo-grant.github.io/notes/address_already_in_use_sometimes.html"/>
+    <id>https://cosmo-grant.github.io/notes/address_already_in_use_sometimes.html</id>
+    <published>2026-06-19T00:00:00Z</published>
+    <updated>2026-06-19T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Remote Disconnected</title>
+    <link href="https://cosmo-grant.github.io/notes/remote_disconnected.html"/>
+    <id>https://cosmo-grant.github.io/notes/remote_disconnected.html</id>
+    <published>2026-04-10T00:00:00Z</published>
+    <updated>2026-04-10T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>GitLab globbing</title>
+    <link href="https://cosmo-grant.github.io/notes/gitlab_globbing.html"/>
+    <id>https://cosmo-grant.github.io/notes/gitlab_globbing.html</id>
+    <published>2026-04-05T00:00:00Z</published>
+    <updated>2026-04-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Should this Lambda function be idempotent?</title>
+    <link href="https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html"/>
+    <id>https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html</id>
+    <published>2026-04-05T00:00:00Z</published>
+    <updated>2026-04-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Go value is nil in called but not caller</title>
+    <link href="https://cosmo-grant.github.io/notes/go_value_is_nil_in_called_but_not_caller.html"/>
+    <id>https://cosmo-grant.github.io/notes/go_value_is_nil_in_called_but_not_caller.html</id>
+    <published>2026-04-05T00:00:00Z</published>
+    <updated>2026-04-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>sql joins</title>
+    <link href="https://cosmo-grant.github.io/notes/sql_joins.html"/>
+    <id>https://cosmo-grant.github.io/notes/sql_joins.html</id>
+    <published>2025-12-05T00:00:00Z</published>
+    <updated>2025-12-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>aws vpc crow's foot</title>
+    <link href="https://cosmo-grant.github.io/notes/aws_vpc_crows_foot.html"/>
+    <id>https://cosmo-grant.github.io/notes/aws_vpc_crows_foot.html</id>
+    <published>2025-12-05T00:00:00Z</published>
+    <updated>2025-12-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Working across multiple projects with kitty</title>
+    <link href="https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html"/>
+    <id>https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html</id>
+    <published>2025-12-05T00:00:00Z</published>
+    <updated>2025-12-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>postgres jsonb containment</title>
+    <link href="https://cosmo-grant.github.io/notes/postgres_jsonb_containment.html"/>
+    <id>https://cosmo-grant.github.io/notes/postgres_jsonb_containment.html</id>
+    <published>2025-12-04T00:00:00Z</published>
+    <updated>2025-12-04T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>backoff's max time</title>
+    <link href="https://cosmo-grant.github.io/notes/backoff_max_time.html"/>
+    <id>https://cosmo-grant.github.io/notes/backoff_max_time.html</id>
+    <published>2025-05-07T00:00:00Z</published>
+    <updated>2025-05-07T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>with-values-select</title>
+    <link href="https://cosmo-grant.github.io/notes/with_values_select.html"/>
+    <id>https://cosmo-grant.github.io/notes/with_values_select.html</id>
+    <published>2025-04-29T00:00:00Z</published>
+    <updated>2025-04-29T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>How backoff jitters and why</title>
+    <link href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html"/>
+    <id>https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html</id>
+    <published>2025-04-27T00:00:00Z</published>
+    <updated>2025-04-27T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>How npm picks registries</title>
+    <link href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html"/>
+    <id>https://cosmo-grant.github.io/notes/how_npm_picks_registries.html</id>
+    <published>2025-04-27T00:00:00Z</published>
+    <updated>2025-04-27T00:00:00Z</updated>
+  </entry>
+</feed>

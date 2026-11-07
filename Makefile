@@ -1,9 +1,11 @@
-.PHONY: view publish
+.PHONY: build preview view
 
-publish:
-	asciidoctor --destination-dir docs/ --attribute source-highlighter=highlightjs --attribute highlightjs-theme=monokai --attribute nofooter notes/*.adoc
-	uv run scripts/make_index.py
-	xdg-open "docs/index.html"
+build:
+	uv run scripts/build.py
+
+preview:
+	uv run scripts/build.py --preview
+	python3 -m http.server --bind 127.0.0.1 --directory preview
 
 view:
-	open "https://cosmo-grant.github.io/notes"
+	xdg-open "https://cosmo-grant.github.io/notes"
