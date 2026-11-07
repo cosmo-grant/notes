@@ -1,99 +1,111 @@
 = Sattolo
+:stem: asciimath
 
-Sattolo's algorithm generates a cyclic permutation of a finite set S, uniformly at random.
+Sattolo's algorithm generates a cyclic permutation of a finite set stem:[S], uniformly at random.
 There are many, many explanations of it out there.
 Here's another.
 
 == What that means
 
-A permutation p of a set S is a bijection from S to S.
-For s in S, s's orbit is the set {s, p(s), p(p(s)), ...}.
-p is cyclic if s's orbit is S, for all x.
-In other words, p is cyclic if following the permutation from any s in S visits every element.
+A permutation stem:[p] of a set stem:[S] is a bijection from stem:[S] to stem:[S].
+For stem:[x] in stem:[S], stem:[x]'s orbit is stem:[x, p(x), p(p(x)), ...].
+stem:[p] is cyclic if stem:[x]'s orbit covers stem:[S], for all stem:[x].
+In other words, stem:[p] is cyclic if following the permutation from any stem:[x] in stem:[S] visits every element.
 
-For example, take S = {1, 2, 3, 4}.
-1->1, 2->2, 3->3, 4->4 is not cyclic.
-Nor is 1->3, 2->4, 3->1, 4->2.
-But 1->2, 2->3, 3->4, 4->1 is cyclic.
-And so is 1->3, 2->1, 3->4, 4->2.
+For example, take stem:[S = {1, 2, 3, 4}].
+stem:[1 -> 1, 2 -> 2, 3 -> 3, 4 -> 4] is not cyclic.
+Nor is stem:[1 -> 3, 2 -> 4, 3 -> 1, 4 -> 2].
+But stem:[1 -> 2, 2 -> 3, 3 -> 4, 4 -> 1] is cyclic.
+And so is stem:[1 -> 3, 2 -> 1, 3 -> 4, 4 -> 2].
 
 == How it works
 
-Without loss of generality, suppose S = {1, 2, ..., n}.
-Represent a permutation p by an array of length n whose ith entry is p(i).
-For example, where S = {1, 2, 3, 4} the array [3, 4, 1, 2] represents the permutation 1->3, 2->4, 3->1, 4->2.
+Without loss of generality, suppose stem:[S = {1, 2, ..., n}].
+Represent a permutation stem:[p] by an array of length stem:[n] whose stem:[i]-th entry is stem:[p(i)].
+For example, where stem:[S = {1, 2, 3, 4}] the array `[3, 4, 1, 2]` represents the permutation stem:[1 -> 3, 2 -> 4, 3 -> 1, 4 -> 2].
 
 The algorithm (using 1-indexing):
 
+----
 initialize arr[i] = i
 for i = 1, ..., n-1:
   choose j > i uniformly at random
   swap arr[i] and arr[j]
+----
 
 That's it.
 
-For example, take S = {1, 2, 3, 4} again.
-Initialize arr to [1, 2, 3, 4].
-Swap arr[1] and, say, arr[3], giving [3, 2, 1, 4].
-Swap arr[2] and, say, arr[4], giving [3, 4, 1, 2].
-Swap arr[3] and arr[4], giving [3, 4, 2, 1].
-That represents our permutation: 1->3, 2->4, 3->2, 4->1.
-And it is indeed cyclic: 1->3->2->4->1.
+For example, take stem:[S = {1, 2, 3, 4}] again.
+Initialize `arr` to `[1, 2, 3, 4]`.
+Swap `arr[1]` and, say, `arr[3]`, giving `[3, 2, 1, 4]`.
+Swap `arr[2]` and, say, `arr[4]`, giving `[3, 4, 1, 2]`.
+Swap `arr[3]` and `arr[4]`, giving `[3, 4, 2, 1]`.
+That represents our permutation: stem:[1 -> 3, 2 -> 4, 3 -> 2, 4 -> 1].
+And it is indeed cyclic: stem:[1 -> 3 -> 2 -> 4 -> 1].
 
 == Why it works
 
 We need to show:
-1. the resulting permutation is cyclic
-2. all cyclic permutations are equally likely
+
+. the resulting permutation is cyclic
+. all cyclic permutations are equally likely
 
 === Cyclic
 
-Claim 1. The orbits partition S.
+*Claim 1.* The orbits partition stem:[S].
 
-Proof. Fix x in S and consider x's orbit: x, p(x), p(p(x)), ...
-Because S is finite, some values repeat.
-Let r be the first such, and focus on r's first and second occurrences.
-Suppose r != x.
-Then there is a value before r's first occurrence, 
-and, because p is a bijection, it equals the value before r's second occurrence,
+_Proof._ Fix stem:[x] in stem:[S] and consider stem:[x]'s orbit: stem:[x, p(x), p(p(x)), ...]
+Because stem:[S] is finite, some values repeat.
+Let stem:[r] be the first such, and focus on stem:[r]'s first and second occurrences.
+Suppose stem:[r != x].
+Then there is a value before stem:[r]'s first occurrence,
+and, because stem:[p] is a bijection, it equals the value before stem:[r]'s second occurrence,
 so that value is an earlier repeat.
 Contradiction.
-So x repeats, and it's the first.
-That means orbits are circular x->...->x &mdash; let's call them *cycles* &mdash; and partition S.
+So stem:[x] repeats, and it's the first.
+That means orbits are circular stem:[x -> ... -> x] &mdash; let's call them *cycles* &mdash; and partition stem:[S].
 
-In our representation of permutations as arrays, each x in S plays two roles: array *index* and array *entry*.
-In x's cycle, arr[x] follows x and x's index precedes it.
+In our representation of permutations as arrays, each stem:[x] in stem:[S] plays two roles: array *index* and array *entry*.
+In stem:[x]'s cycle, `arr[x]` *follows* stem:[x] and stem:[x]'s index *precedes* stem:[x].
 We'll focus on indexes, not entries, in what follows, because it's less notation.
 
-Claim 2. Where i, j belong to different cycles, swapping arr[i] and arr[j] merges the cycles.
-Proof. Before the swap we have i->k->...->i and j->m->...->j.
-After the swap we have i->m->...->j->k->...->i.
+*Claim 2.* Where stem:[i, j] belong to different cycles, swapping `arr[i]` and `arr[j]` merges the cycles.
 
-Claim 3. Before the i-th swap, i, i+1, ..., n belong to different cycles.
-Proof. True initially, i.e. for i=1.
-Suppose true before the i-th swap for some i.
-We choose j > i+1 and swap arr[i+1] and arr[j].
-By hypothesis, i and j belonged to different cycles.
+_Proof._ Before the swap we have stem:[i -> k -> ... -> i] and stem:[j -> m -> ... -> j].
+After the swap we have stem:[i -> m -> ... -> j -> k -> ... -> i].
+
+*Claim 3.* Before the stem:[i]-th swap, stem:[i, i+1, ..., n] belong to different cycles.
+
+_Proof._ True initially, i.e. for stem:[i = 1].
+Suppose true before the stem:[i]-th swap for some stem:[i].
+We choose stem:[j > i] and swap `arr[i]` and `arr[j]`.
+By hypothesis, stem:[i] and stem:[j] belonged to different cycles.
 By Claim 2, swapping merges them.
-But i+1, ..., n still belong to different cycles.
-So the claim is true for i=1, and if true for i then true for i+1, so true for all i.
+But stem:[i+1, ..., n] still belong to different cycles.
+So the claim is true for stem:[i = 1], and if true for stem:[i] then true for stem:[i+1], so true for all stem:[i].
 
-Claim 4. Each swap reduces the number of cycles by 1.
-Proof. From Claims 2 and 3. 
+*Claim 4.* Each swap reduces the number of cycles by 1.
 
-Claim 5. Sattolo yields a cyclic permutation.
-Proof. Initially there are n cycles.
-And we do n-1 swaps, each reducing the number of cycles by 1.
+_Proof._ From Claims 2 and 3.
+
+*Claim 5.* Sattolo yields a cyclic permutation.
+
+_Proof._ Initially there are stem:[n] cycles.
+And we do stem:[n-1] swaps, each reducing the number of cycles by 1.
 
 === Equally likely
 
-Claim 6. Sattolo can produce (n-1)! permutations, all equally likely.
-Proof. At the i-th swap, you decide what to put at index i (i.e. p(i)) from among the (n-i) items to the right.
-So there are (n-1)! ways to make the choices.
+*Claim 6.* Sattolo can produce stem:[(n-1)!] permutations, all equally likely.
+
+_Proof._ At the stem:[i]-th swap, you fix, for good, what to put at index stem:[i] (i.e. stem:[p(i)]) from among the stem:[n-i] items to the right.
+There are stem:[(n-1)!] ways to make the choices.
 Different choices produce different permutations.
 And all choices are equally likely.
 
-Claim 7. There are (n-1)! cyclic permutations.
-Proof. Any cyclic permutation can be written as 1 -> p(1) -> p(p(1)) -> ... -> 1.
+*Claim 7.* There are stem:[(n-1)!] cyclic permutations.
+
+_Proof._ Any cyclic permutation can be written as stem:[1 -> p(1) -> p(p(1)) -> ... -> 1].
 Any such writing describes a cyclic permutation.
-And there are (n-1)! such writings.
+And there are stem:[(n-1)!] such writings.
+
+So Sattolo produces stem:[(n-1)!] permutations (Claim 6), all cyclic (Claim 5), all equally likely (Claim 6), and that's all the cyclic permutations (Claim 7).
