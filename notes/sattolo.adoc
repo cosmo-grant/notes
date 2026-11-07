@@ -73,7 +73,7 @@ We'll focus on indexes, not entries, in what follows, because it's less notation
 *Claim 2.* Where stem:[i, j] belong to different cycles, swapping `arr[i]` and `arr[j]` merges the cycles.
 
 _Proof._ Before the swap we have stem:[i -> arr\[i\] -> ... -> i] and stem:[j -> arr\[j\] -> ... -> j].
-After the swap we have stem:[i -> m -> ... -> j -> k -> ... -> i].
+After the swap we have stem:[i -> arr\[j\] -> ... -> j -> arr\[i\] -> ... -> i].
 
 *Claim 3.* Before the stem:[i]-th swap, stem:[i, i+1, ..., n] belong to different cycles.
 
