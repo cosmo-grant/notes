@@ -118,7 +118,7 @@ def main():
     posts = [parse_header(path) for path in NOTES_DIR.glob("*.adoc")]
     if not args.preview:
         posts = [post for post in posts if post.published]
-    posts.sort(key=lambda post: post.published or date.max, reverse=True)
+    posts.sort(key=lambda post: (post.published or date.max, post.path.name), reverse=True)
 
     shutil.rmtree(out_dir, ignore_errors=True)
     asciidoctor(out_dir, *(post.path for post in posts))

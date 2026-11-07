@@ -35,13 +35,6 @@
     <updated>2026-04-10T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>GitLab globbing</title>
-    <link href="https://cosmo-grant.github.io/notes/gitlab_globbing.html"/>
-    <id>https://cosmo-grant.github.io/notes/gitlab_globbing.html</id>
-    <published>2026-04-05T00:00:00Z</published>
-    <updated>2026-04-05T00:00:00Z</updated>
-  </entry>
-  <entry>
     <title>Should this Lambda function be idempotent?</title>
     <link href="https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html"/>
     <id>https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html</id>
@@ -56,6 +49,20 @@
     <updated>2026-04-05T00:00:00Z</updated>
   </entry>
   <entry>
+    <title>GitLab globbing</title>
+    <link href="https://cosmo-grant.github.io/notes/gitlab_globbing.html"/>
+    <id>https://cosmo-grant.github.io/notes/gitlab_globbing.html</id>
+    <published>2026-04-05T00:00:00Z</published>
+    <updated>2026-04-05T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Working across multiple projects with kitty</title>
+    <link href="https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html"/>
+    <id>https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html</id>
+    <published>2025-12-05T00:00:00Z</published>
+    <updated>2025-12-05T00:00:00Z</updated>
+  </entry>
+  <entry>
     <title>sql joins</title>
     <link href="https://cosmo-grant.github.io/notes/sql_joins.html"/>
     <id>https://cosmo-grant.github.io/notes/sql_joins.html</id>
@@ -66,13 +73,6 @@
     <title>aws vpc crow's foot</title>
     <link href="https://cosmo-grant.github.io/notes/aws_vpc_crows_foot.html"/>
     <id>https://cosmo-grant.github.io/notes/aws_vpc_crows_foot.html</id>
-    <published>2025-12-05T00:00:00Z</published>
-    <updated>2025-12-05T00:00:00Z</updated>
-  </entry>
-  <entry>
-    <title>Working across multiple projects with kitty</title>
-    <link href="https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html"/>
-    <id>https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html</id>
     <published>2025-12-05T00:00:00Z</published>
     <updated>2025-12-05T00:00:00Z</updated>
   </entry>
@@ -98,16 +98,16 @@
     <updated>2025-04-29T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>How backoff jitters and why</title>
-    <link href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html"/>
-    <id>https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html</id>
+    <title>How npm picks registries</title>
+    <link href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html"/>
+    <id>https://cosmo-grant.github.io/notes/how_npm_picks_registries.html</id>
     <published>2025-04-27T00:00:00Z</published>
     <updated>2025-04-27T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>How npm picks registries</title>
-    <link href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html"/>
-    <id>https://cosmo-grant.github.io/notes/how_npm_picks_registries.html</id>
+    <title>How backoff jitters and why</title>
+    <link href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html"/>
+    <id>https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html</id>
     <published>2025-04-27T00:00:00Z</published>
     <updated>2025-04-27T00:00:00Z</updated>
   </entry>
