@@ -5,7 +5,7 @@ Sattolo's algorithm generates a cyclic permutation of a finite set stem:[S], uni
 There are many, many explanations of it out there.
 Here's another.
 
-== What that means
+== What it is
 
 A permutation stem:[p] of a set stem:[S] is a bijection from stem:[S] to stem:[S].
 For stem:[x] in stem:[S], stem:[x]'s orbit is stem:[x, p(x), p(p(x)), ...].
@@ -63,15 +63,15 @@ and, because stem:[p] is a bijection, it equals the value before stem:[r]'s seco
 so that value is an earlier repeat.
 Contradiction.
 So stem:[x] repeats, and it's the first.
-That means orbits are circular stem:[x -> ... -> x] &mdash; let's call them *cycles* &mdash; and partition stem:[S].
+That means orbits are circular stem:[x -> ... -> x] &mdash; let's call them _cycles_ &mdash; and partition stem:[S].
 
-In our representation of permutations as arrays, each stem:[x] in stem:[S] plays two roles: array *index* and array *entry*.
-In stem:[x]'s cycle, `arr[x]` *follows* stem:[x] and stem:[x]'s index *precedes* stem:[x].
+In our representation of permutations as arrays, each stem:[x] in stem:[S] plays two roles: array _index_ and array _entry_.
+In stem:[x]'s cycle, `arr[x]` _follows_ stem:[x] and stem:[x]'s index _precedes_ stem:[x].
 We'll focus on indexes, not entries, in what follows, because it's less notation.
 
 *Claim 2.* Where stem:[i, j] belong to different cycles, swapping `arr[i]` and `arr[j]` merges the cycles.
 
-_Proof._ Before the swap we have stem:[i -> k -> ... -> i] and stem:[j -> m -> ... -> j].
+_Proof._ Before the swap we have stem:[i -> arr\[i\] -> ... -> i] and stem:[j -> arr\[j\] -> ... -> j].
 After the swap we have stem:[i -> m -> ... -> j -> k -> ... -> i].
 
 *Claim 3.* Before the stem:[i]-th swap, stem:[i, i+1, ..., n] belong to different cycles.
@@ -97,7 +97,7 @@ And we do stem:[n-1] swaps, each reducing the number of cycles by 1.
 
 *Claim 6.* Sattolo can produce stem:[(n-1)!] permutations, all equally likely.
 
-_Proof._ At the stem:[i]-th swap, you fix, for good, what to put at index stem:[i] (i.e. stem:[p(i)]) from among the stem:[n-i] items to the right.
+_Proof._ At the stem:[i]-th swap, you fix, for good, what to put at index stem:[i], i.e. stem:[p(i)], from among the stem:[n-i] items to the right.
 There are stem:[(n-1)!] ways to make the choices.
 Different choices produce different permutations.
 And all choices are equally likely.

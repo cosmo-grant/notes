@@ -450,7 +450,7 @@ Here&#8217;s another.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_what_that_means">What that means</h2>
+<h2 id="_what_it_is">What it is</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>A permutation \$p\$ of a set \$S\$ is a bijection from \$S\$ to \$S\$.
@@ -531,18 +531,18 @@ and, because \$p\$ is a bijection, it equals the value before \$r\$'s second occ
 so that value is an earlier repeat.
 Contradiction.
 So \$x\$ repeats, and it&#8217;s the first.
-That means orbits are circular \$x -&gt; ... -&gt; x\$ &mdash; let&#8217;s call them <strong>cycles</strong> &mdash; and partition \$S\$.</p>
+That means orbits are circular \$x -&gt; ... -&gt; x\$ &mdash; let&#8217;s call them <em>cycles</em> &mdash; and partition \$S\$.</p>
 </div>
 <div class="paragraph">
-<p>In our representation of permutations as arrays, each \$x\$ in \$S\$ plays two roles: array <strong>index</strong> and array <strong>entry</strong>.
-In \$x\$'s cycle, <code>arr[x]</code> <strong>follows</strong> \$x\$ and \$x\$'s index <strong>precedes</strong> \$x\$.
+<p>In our representation of permutations as arrays, each \$x\$ in \$S\$ plays two roles: array <em>index</em> and array <em>entry</em>.
+In \$x\$'s cycle, <code>arr[x]</code> <em>follows</em> \$x\$ and \$x\$'s index <em>precedes</em> \$x\$.
 We&#8217;ll focus on indexes, not entries, in what follows, because it&#8217;s less notation.</p>
 </div>
 <div class="paragraph">
 <p><strong>Claim 2.</strong> Where \$i, j\$ belong to different cycles, swapping <code>arr[i]</code> and <code>arr[j]</code> merges the cycles.</p>
 </div>
 <div class="paragraph">
-<p><em>Proof.</em> Before the swap we have \$i -&gt; k -&gt; ... -&gt; i\$ and \$j -&gt; m -&gt; ... -&gt; j\$.
+<p><em>Proof.</em> Before the swap we have \$i -&gt; arr\[i] -&gt; ... -&gt; i\$ and \$j -&gt; arr\[j] -&gt; ... -&gt; j\$.
 After the swap we have \$i -&gt; m -&gt; ... -&gt; j -&gt; k -&gt; ... -&gt; i\$.</p>
 </div>
 <div class="paragraph">
@@ -577,7 +577,7 @@ And we do \$n-1\$ swaps, each reducing the number of cycles by 1.</p>
 <p><strong>Claim 6.</strong> Sattolo can produce \$(n-1)!\$ permutations, all equally likely.</p>
 </div>
 <div class="paragraph">
-<p><em>Proof.</em> At the \$i\$-th swap, you fix, for good, what to put at index \$i\$ (i.e. \$p(i)\$) from among the \$n-i\$ items to the right.
+<p><em>Proof.</em> At the \$i\$-th swap, you fix, for good, what to put at index \$i\$, i.e. \$p(i)\$, from among the \$n-i\$ items to the right.
 There are \$(n-1)!\$ ways to make the choices.
 Different choices produce different permutations.
 And all choices are equally likely.</p>
