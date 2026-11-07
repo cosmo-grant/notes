@@ -1,10 +1,6 @@
 # Contributing
 
-Requires asciidoctor, uv and pre-commit.
-
-```sh
-pre-commit install
-```
+Requires asciidoctor and uv.
 
 ## Write
 
@@ -42,7 +38,6 @@ Add the date under the title:
 ```
 
 Then `make build`, commit and push.
-The pre-push hook fails if `docs/` is out of date.
 
 The filename is the URL, so don't rename published posts.
 Editing a published post doesn't change the feed.
