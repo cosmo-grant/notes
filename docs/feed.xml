@@ -7,56 +7,56 @@
   <updated>2026-11-07T00:00:00Z</updated>
   <author><name>Cosmo Grant</name></author>
   <entry>
-    <title>Sattolo</title>
+    <title>sattolo</title>
     <link href="https://cosmo-grant.github.io/notes/sattolo.html"/>
     <id>https://cosmo-grant.github.io/notes/sattolo.html</id>
     <published>2026-11-07T00:00:00Z</published>
     <updated>2026-11-07T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Deriving Two's Complement</title>
+    <title>deriving two's complement</title>
     <link href="https://cosmo-grant.github.io/notes/deriving_twos_complement.html"/>
     <id>https://cosmo-grant.github.io/notes/deriving_twos_complement.html</id>
     <published>2026-06-19T00:00:00Z</published>
     <updated>2026-06-19T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Address already in use, sometimes</title>
+    <title>address already in use, sometimes</title>
     <link href="https://cosmo-grant.github.io/notes/address_already_in_use_sometimes.html"/>
     <id>https://cosmo-grant.github.io/notes/address_already_in_use_sometimes.html</id>
     <published>2026-06-19T00:00:00Z</published>
     <updated>2026-06-19T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Remote Disconnected</title>
+    <title>remote disconnected</title>
     <link href="https://cosmo-grant.github.io/notes/remote_disconnected.html"/>
     <id>https://cosmo-grant.github.io/notes/remote_disconnected.html</id>
     <published>2026-04-10T00:00:00Z</published>
     <updated>2026-04-10T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Should this Lambda function be idempotent?</title>
+    <title>should this lambda function be idempotent?</title>
     <link href="https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html"/>
     <id>https://cosmo-grant.github.io/notes/should_this_lambda_function_be_idempotent.html</id>
     <published>2026-04-05T00:00:00Z</published>
     <updated>2026-04-05T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Go value is nil in called but not caller</title>
+    <title>go value is nil in called but not caller</title>
     <link href="https://cosmo-grant.github.io/notes/go_value_is_nil_in_called_but_not_caller.html"/>
     <id>https://cosmo-grant.github.io/notes/go_value_is_nil_in_called_but_not_caller.html</id>
     <published>2026-04-05T00:00:00Z</published>
     <updated>2026-04-05T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>GitLab globbing</title>
+    <title>gitlab globbing</title>
     <link href="https://cosmo-grant.github.io/notes/gitlab_globbing.html"/>
     <id>https://cosmo-grant.github.io/notes/gitlab_globbing.html</id>
     <published>2026-04-05T00:00:00Z</published>
     <updated>2026-04-05T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>Working across multiple projects with kitty</title>
+    <title>working across multiple projects with kitty</title>
     <link href="https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html"/>
     <id>https://cosmo-grant.github.io/notes/working_across_multiple_projects_in_kitty.html</id>
     <published>2025-12-05T00:00:00Z</published>
@@ -98,14 +98,14 @@
     <updated>2025-04-29T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>How npm picks registries</title>
+    <title>how npm picks registries</title>
     <link href="https://cosmo-grant.github.io/notes/how_npm_picks_registries.html"/>
     <id>https://cosmo-grant.github.io/notes/how_npm_picks_registries.html</id>
     <published>2025-04-27T00:00:00Z</published>
     <updated>2025-04-27T00:00:00Z</updated>
   </entry>
   <entry>
-    <title>How backoff jitters and why</title>
+    <title>how backoff jitters and why</title>
     <link href="https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html"/>
     <id>https://cosmo-grant.github.io/notes/how_backoff_jitters_and_why.html</id>
     <published>2025-04-27T00:00:00Z</published>

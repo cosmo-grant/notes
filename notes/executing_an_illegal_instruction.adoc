@@ -1,4 +1,4 @@
-= Executing An Illegal Instruction
+= executing an illegal instruction
 
 ostep quote
 

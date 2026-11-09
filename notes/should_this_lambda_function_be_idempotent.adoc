@@ -1,4 +1,4 @@
-= Should this Lambda function be idempotent?
+= should this lambda function be idempotent?
 :published: 2026-04-05
 
 EventBridge sends events to a Lambda function.

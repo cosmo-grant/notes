@@ -1,4 +1,4 @@
-= Writing good anki cards
+= writing good anki cards
 
 == Shorter!
 

@@ -1,4 +1,4 @@
-= How npm picks registries
+= how npm picks registries
 :published: 2025-04-27
 
 == Question

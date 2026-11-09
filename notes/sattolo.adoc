@@ -1,4 +1,4 @@
-= Sattolo
+= sattolo
 :published: 2026-11-07
 :stem: asciimath
 

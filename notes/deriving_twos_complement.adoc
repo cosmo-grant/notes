@@ -1,4 +1,4 @@
-= Deriving Two's Complement
+= deriving two's complement
 :published: 2026-06-19
 :stem: asciimath
 

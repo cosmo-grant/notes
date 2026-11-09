@@ -1,4 +1,4 @@
-= How backoff jitters and why
+= how backoff jitters and why
 :published: 2025-04-27
 :stem:
 

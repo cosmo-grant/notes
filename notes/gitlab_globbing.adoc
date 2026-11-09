@@ -1,4 +1,4 @@
-= GitLab globbing
+= gitlab globbing
 :published: 2026-04-05
 
 == My issue

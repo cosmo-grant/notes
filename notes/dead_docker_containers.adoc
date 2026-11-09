@@ -1,4 +1,4 @@
-= Dead Docker Containers
+= dead docker containers
 
 `snippet-checker` is a Python package which checks code snippets by running them in Docker containers using Docker's Python SDK.
 While testing an early version, I ended up with hundreds of dead containers.
