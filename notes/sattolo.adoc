@@ -1,20 +1,16 @@
-= sattolo
+= sattolo generates a cyclic permutation of a finite set, uniformly at random
 :published: 2026-11-07
 :stem: asciimath
 
-Sattolo's algorithm generates a cyclic permutation of a finite set stem:[S], uniformly at random.
-There are many, many explanations of it out there.
-Here's another.
+== What that means
 
-== What it is
-
-A permutation stem:[p] of a set stem:[S] is a bijection from stem:[S] to stem:[S].
-For stem:[x] in stem:[S], stem:[x]'s orbit is stem:[x, p(x), p(p(x)), ...].
-stem:[p] is cyclic if stem:[x]'s orbit covers stem:[S], for all stem:[x].
+A _permutation_ stem:[p] of a set stem:[S] is a bijection from stem:[S] to stem:[S].
+For stem:[x] in stem:[S], stem:[x]'s _orbit_ is stem:[x, p(x), p(p(x)), ...].
+stem:[p] is _cyclic_ if stem:[x]'s orbit covers stem:[S], for all stem:[x].
 In other words, stem:[p] is cyclic if following the permutation from any stem:[x] in stem:[S] visits every element.
 
 For example, take stem:[S = {1, 2, 3, 4}].
-stem:[1 -> 1, 2 -> 2, 3 -> 3, 4 -> 4] is not cyclic.
+stem:[1 |-> 1, 2 |-> 2, 3 |-> 3, 4 |-> 4] is not cyclic.
 Nor is stem:[1 -> 3, 2 -> 4, 3 -> 1, 4 -> 2].
 But stem:[1 -> 2, 2 -> 3, 3 -> 4, 4 -> 1] is cyclic.
 And so is stem:[1 -> 3, 2 -> 1, 3 -> 4, 4 -> 2].
@@ -83,7 +79,7 @@ We choose stem:[j > i] and swap `arr[i]` and `arr[j]`.
 By hypothesis, stem:[i] and stem:[j] belonged to different cycles.
 By Claim 2, swapping merges them.
 But stem:[i+1, ..., n] still belong to different cycles.
-So the claim is true for stem:[i = 1], and if true for stem:[i] then true for stem:[i+1], so true for all stem:[i].
+So if true for stem:[i] then true for stem:[i+1].
 
 *Claim 4.* Each swap reduces the number of cycles by 1.
 
