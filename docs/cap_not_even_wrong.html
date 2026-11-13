@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.26">
+<title>"consistent, available, partition-tolerant: pick two" &mdash; not even wrong</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
+<link rel="alternate" type="application/atom+xml" title="Notes" href="feed.xml">
+</head>
+<body class="article">
+<div id="header">
+<h1><em>"consistent, available, partition-tolerant: pick two"</em> &mdash; not even wrong</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_car">Car</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You&#8217;re choosing a car: ferrari or jeep?<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s plenty to consider: speed, efficiency, how good it&#8217;ll look on your driveway, and so on.
+But you&#8217;re preoccupied by two things:
+Would you make your commute in under an hour?
+Would you spill your coffee on the way?</p>
+</div>
+<div class="paragraph">
+<p>You&#8217;ve drawn up a table:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">potholes</th>
+<th class="tableblock halign-left valign-top">no potholes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">ferrari</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;1hr, spill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;1hr, no spill</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">jeep</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt;1hr, no spill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;1hr, no spill</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Either car gives sub-hour, spill-free commutes when no potholes.
+But when there are potholes your commutes can be sub-hour or spill-free but not both.
+Tradeoff!</p>
+</div>
+<div class="paragraph">
+<p>You choose a car.</p>
+</div>
+<div class="paragraph">
+<p>Of any <em>commutes</em>, it makes sense to ask</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="1">
+<li>
+<p>Were they sub-hour?</p>
+</li>
+<li>
+<p>Were they spill-free?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>but <em>not</em></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="3">
+<li>
+<p>Were they pothole-tolerant?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Of your <em>car</em>, it makes sense to ask</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="4">
+<li>
+<p>Is it pothole-tolerant, time-wise? (ferrari yes, jeep no)</p>
+</li>
+<li>
+<p>Is it pothole-tolerant, spill-wise? (ferrari no, jeep yes)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>but <em>not</em></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="6">
+<li>
+<p>Is it pothole-tolerant?</p>
+</li>
+<li>
+<p>Is it sub-hour?</p>
+</li>
+<li>
+<p>Is it spill-free?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><em>"Sub-hour, spill-free, pothole-tolerant: pick two"?</em>
+It doesn&#8217;t make sense.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cap">CAP</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You&#8217;re choosing an algorithm: algo1 or algo2?</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s plenty to consider: speed, efficiency, how good it&#8217;ll look on your CV, and so on.
+But you&#8217;re preoccupied by two things:
+Would your service be available?
+Would it be consistent?</p>
+</div>
+<div class="paragraph">
+<p>You&#8217;ve drawn up a table:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">partition</th>
+<th class="tableblock halign-left valign-top">no partition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">algo1</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock">available, inconsistent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">available, consistent</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">algo2</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock">unavailable, consistent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">available, consistent</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Either algorithm gives an available, consistent service when no partition.
+But when there is a partition your service can be available or consistent but not both.
+Tradeoff!</p>
+</div>
+<div class="paragraph">
+<p>You choose an algorithm.</p>
+</div>
+<div class="paragraph">
+<p>Of any <em>executions</em>, it makes sense to ask</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="1">
+<li>
+<p>Were they available?</p>
+</li>
+<li>
+<p>Were they consistent?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>but <em>not</em></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="3">
+<li>
+<p>Were they partition-tolerant?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Of your <em>algorithm</em>, it makes sense to ask</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="4">
+<li>
+<p>Is it partition-tolerant, availability-wise? (algo1 yes, algo2 no)</p>
+</li>
+<li>
+<p>Is it partition-tolerant, consistency-wise? (algo1 no, algo2 yes)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>but <em>not</em></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="6">
+<li>
+<p>Is it partition-tolerant?</p>
+</li>
+<li>
+<p>Is it available?</p>
+</li>
+<li>
+<p>Is it consistent?</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><em>"Available, consistent, partition-tolerant: pick two"?</em>
+It doesn&#8217;t make sense.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnotedef_1">
+<a href="#_footnoteref_1">1</a>. This note develops one of Martin Kleppmann&#8217;s many criticisms of CAP in his great post <a href="https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html" class="bare">https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html</a>. What&#8217;s not even wrong is the <em>slogan</em>. The <em>theorem</em> behind the slogan is right enough, but that&#8217;s the best that can be said for it. See Kleppmann&#8217;s post.
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code[data-lang]')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+</body>
+</html>

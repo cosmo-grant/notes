@@ -4,10 +4,17 @@
   <link href="https://cosmo-grant.github.io/notes/"/>
   <link rel="self" href="https://cosmo-grant.github.io/notes/feed.xml"/>
   <id>https://cosmo-grant.github.io/notes/</id>
-  <updated>2026-11-07T00:00:00Z</updated>
+  <updated>2026-11-13T00:00:00Z</updated>
   <author><name>Cosmo Grant</name></author>
   <entry>
-    <title>sattolo</title>
+    <title>_"consistent, available, partition-tolerant: pick two"_ &amp;mdash; not even wrong</title>
+    <link href="https://cosmo-grant.github.io/notes/cap_not_even_wrong.html"/>
+    <id>https://cosmo-grant.github.io/notes/cap_not_even_wrong.html</id>
+    <published>2026-11-13T00:00:00Z</published>
+    <updated>2026-11-13T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>sattolo generates a cyclic permutation of a finite set, uniformly at random</title>
     <link href="https://cosmo-grant.github.io/notes/sattolo.html"/>
     <id>https://cosmo-grant.github.io/notes/sattolo.html</id>
     <published>2026-11-07T00:00:00Z</published>

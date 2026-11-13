@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.26">
-<title>sattolo</title>
+<title>sattolo generates a cyclic permutation of a finite set, uniformly at random</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/monokai.min.css">
@@ -13,25 +13,16 @@
 </head>
 <body class="article">
 <div id="header">
-<h1>sattolo</h1>
+<h1>sattolo generates a cyclic permutation of a finite set, uniformly at random</h1>
 </div>
 <div id="content">
-<div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>Sattolo&#8217;s algorithm generates a cyclic permutation of a finite set \$S\$, uniformly at random.
-There are many, many explanations of it out there.
-Here&#8217;s another.</p>
-</div>
-</div>
-</div>
 <div class="sect1">
-<h2 id="_what_it_is">What it is</h2>
+<h2 id="_what_that_means">What that means</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A permutation \$p\$ of a set \$S\$ is a bijection from \$S\$ to \$S\$.
-For \$x\$ in \$S\$, \$x\$'s orbit is \$x, p(x), p(p(x)), ...\$.
-\$p\$ is cyclic if \$x\$'s orbit covers \$S\$, for all \$x\$.
+<p>A <em>permutation</em> \$p\$ of a set \$S\$ is a bijection from \$S\$ to \$S\$.
+For \$x\$ in \$S\$, \$x\$'s <em>orbit</em> is \$x, p(x), p(p(x)), ...\$.
+\$p\$ is <em>cyclic</em> if \$x\$'s orbit covers \$S\$, for all \$x\$.
 In other words, \$p\$ is cyclic if following the permutation from any \$x\$ in \$S\$ visits every element.</p>
 </div>
 <div class="paragraph">
@@ -131,7 +122,7 @@ We choose \$j &gt; i\$ and swap <code>arr[i]</code> and <code>arr[j]</code>.
 By hypothesis, \$i\$ and \$j\$ belonged to different cycles.
 By Claim 2, swapping merges them.
 But \$i+1, ..., n\$ still belong to different cycles.
-So the claim is true for \$i = 1\$, and if true for \$i\$ then true for \$i+1\$, so true for all \$i\$.</p>
+So if true for \$i\$ then true for \$i+1\$.</p>
 </div>
 <div class="paragraph">
 <p><strong>Claim 4.</strong> Each swap reduces the number of cycles by 1.</p>
