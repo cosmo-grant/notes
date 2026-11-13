@@ -1,0 +1,108 @@
+= _"consistent, available, partition-tolerant: pick two"_ &mdash; not even wrong
+:published: 2026-11-13
+
+== Car
+
+You're choosing a car: ferrari or jeep?footnote:[
+This note develops one of Martin Kleppmann's many criticisms of CAP in his great post https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html.
+What's not even wrong is the _slogan_.
+The _theorem_ behind the slogan is right enough, but that's the best that can be said for it.
+See Kleppmann's post.]
+
+There's plenty to consider: speed, efficiency, how good it'll look on your driveway, and so on.
+But you're preoccupied by two things:
+Would you make your commute in under an hour?
+Would you spill your coffee on the way?
+
+You've drawn up a table:
+
+[cols="h,1,1", options="header"]
+|===
+|        | potholes       | no potholes
+| ferrari | <1hr, spill    | <1hr, no spill
+| jeep    | >1hr, no spill | <1hr, no spill
+|===
+
+Either car gives sub-hour, spill-free commutes when no potholes.
+But when there are potholes your commutes can be sub-hour or spill-free but not both.
+Tradeoff!
+
+You choose a car.
+
+Of any _commutes_, it makes sense to ask
+
+[start=1]
+. Were they sub-hour?
+. Were they spill-free?
+
+but _not_
+
+[start=3]
+. Were they pothole-tolerant?
+
+Of your _car_, it makes sense to ask
+
+[start=4]
+. Is it pothole-tolerant, time-wise? (ferrari yes, jeep no)
+. Is it pothole-tolerant, spill-wise? (ferrari no, jeep yes)
+
+but _not_
+
+[start=6]
+. Is it pothole-tolerant?
+. Is it sub-hour?
+. Is it spill-free?
+
+_"Sub-hour, spill-free, pothole-tolerant: pick two"?_
+It doesn't make sense.
+
+== CAP
+
+You're choosing an algorithm: algo1 or algo2?
+
+There's plenty to consider: speed, efficiency, how good it'll look on your CV, and so on.
+But you're preoccupied by two things:
+Would your service be available?
+Would it be consistent?
+
+You've drawn up a table:
+
+[cols="h,1,1", options="header"]
+|===
+|       | partition               | no partition
+| algo1 | available, inconsistent | available, consistent
+| algo2 | unavailable, consistent | available, consistent
+|===
+
+Either algorithm gives an available, consistent service when no partition.
+But when there is a partition your service can be available or consistent but not both.
+Tradeoff!
+
+You choose an algorithm.
+
+Of any _executions_, it makes sense to ask
+
+[start=1]
+. Were they available?
+. Were they consistent?
+
+but _not_
+
+[start=3]
+. Were they partition-tolerant?
+
+Of your _algorithm_, it makes sense to ask
+
+[start=4]
+. Is it partition-tolerant, availability-wise? (algo1 yes, algo2 no)
+. Is it partition-tolerant, consistency-wise? (algo1 no, algo2 yes)
+
+but _not_
+
+[start=6]
+. Is it partition-tolerant?
+. Is it available?
+. Is it consistent?
+
+_"Available, consistent, partition-tolerant: pick two"?_
+It doesn't make sense.
